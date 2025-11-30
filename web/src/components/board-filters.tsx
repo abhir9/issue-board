@@ -83,7 +83,7 @@ export function BoardFilters() {
         <SelectContent>
           <SelectItem value="all">All Labels</SelectItem>
           {labels.map((l) => (
-            <SelectItem key={l.id} value={l.id}>
+            <SelectItem key={l.id} value={l.name}>
               {l.name}
             </SelectItem>
           ))}

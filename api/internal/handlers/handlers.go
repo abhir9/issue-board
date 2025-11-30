@@ -24,15 +24,14 @@ func NewHandler(repo *database.Repository) *Handler {
 
 // GetIssues godoc
 // @Summary Get all issues
-// @Description Get a list of issues, optionally filtered by status, assignee, or priority
+// @Description Get a list of issues, optionally filtered by status, assignee, priority, or labels
 // @Tags issues
 // @Accept json
 // @Produce json
 // @Param status query string false "Filter by status"
 // @Param assignee query string false "Filter by assignee ID"
 // @Param priority query string false "Filter by priority"
-// @Success 200 {array} models.Issue
-// @Param priority query string false "Filter by priority"
+// @Param labels query string false "Filter by label name (e.g., ?labels=bug)"
 // @Success 200 {array} models.Issue
 // @Failure 500 {string} string "Internal Server Error"
 // @Router /issues [get]

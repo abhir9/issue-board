@@ -55,8 +55,8 @@ func (r *Repository) GetIssues(status []string, assigneeID string, priority []st
 			placeholders[i] = "?"
 			args = append(args, l)
 		}
-		// Filter issues that have at least one of the specified labels
-		query += fmt.Sprintf(" AND EXISTS (SELECT 1 FROM issue_labels il WHERE il.issue_id = i.id AND il.label_id IN (%s))", strings.Join(placeholders, ","))
+		// Filter issues that have at least one of the specified labels (by label name)
+		query += fmt.Sprintf(" AND EXISTS (SELECT 1 FROM issue_labels il JOIN labels l ON il.label_id = l.id WHERE il.issue_id = i.id AND l.name IN (%s))", strings.Join(placeholders, ","))
 	}
 
 	query += " ORDER BY i.order_index ASC"
