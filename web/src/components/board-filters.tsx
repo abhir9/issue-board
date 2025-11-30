@@ -8,7 +8,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { getUsers } from '@/lib/api';
+import { getLabels, getUsers } from '@/lib/api';
 import { useQuery } from '@tanstack/react-query';
 import { X } from 'lucide-react';
 import { useRouter, useSearchParams } from 'next/navigation';
@@ -22,8 +22,14 @@ export function BoardFilters() {
     queryFn: getUsers,
   });
 
+  const { data: labels = [] } = useQuery({
+    queryKey: ['labels'],
+    queryFn: getLabels,
+  });
+
   const assignee = searchParams.get('assignee') || 'all';
   const priority = searchParams.get('priority') || 'all';
+  const label = searchParams.get('labels') || 'all';
 
   const updateFilter = (key: string, value: string) => {
     const params = new URLSearchParams(searchParams.toString());
@@ -39,7 +45,7 @@ export function BoardFilters() {
     router.push('/issues');
   };
 
-  const hasFilters = assignee !== 'all' || priority !== 'all';
+  const hasFilters = assignee !== 'all' || priority !== 'all' || label !== 'all';
 
   return (
     <div className="flex items-center gap-2">
@@ -67,6 +73,20 @@ export function BoardFilters() {
           <SelectItem value="Medium">Medium</SelectItem>
           <SelectItem value="High">High</SelectItem>
           <SelectItem value="Critical">Critical</SelectItem>
+        </SelectContent>
+      </Select>
+
+      <Select value={label} onValueChange={(v) => updateFilter('labels', v)}>
+        <SelectTrigger className="w-[150px] h-9" aria-label="Filter by label">
+          <SelectValue placeholder="Label" />
+        </SelectTrigger>
+        <SelectContent>
+          <SelectItem value="all">All Labels</SelectItem>
+          {labels.map((l) => (
+            <SelectItem key={l.id} value={l.id}>
+              {l.name}
+            </SelectItem>
+          ))}
         </SelectContent>
       </Select>
 

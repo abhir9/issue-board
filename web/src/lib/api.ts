@@ -26,11 +26,13 @@ export const getIssues = async (filters?: {
   status?: string[];
   assignee?: string;
   priority?: string[];
+  labels?: string[];
 }) => {
   const params = new URLSearchParams();
   filters?.status?.forEach((s) => params.append('status', s));
   if (filters?.assignee) params.append('assignee', filters.assignee);
   filters?.priority?.forEach((p) => params.append('priority', p));
+  filters?.labels?.forEach((l) => params.append('labels', l));
 
   const { data } = await api.get<Issue[]>('/issues', { params });
   return data;

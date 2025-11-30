@@ -67,6 +67,7 @@ export function Board() {
     () => ({
       assignee: searchParams.get('assignee') || undefined,
       priority: searchParams.get('priority') ? [searchParams.get('priority')!] : undefined,
+      labels: searchParams.get('labels') ? [searchParams.get('labels')!] : undefined,
     }),
     [searchParams]
   );
