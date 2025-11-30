@@ -84,7 +84,21 @@
 - **Visibility:** Errors are shown as non-intrusive toasts (using `sonner` or `toast`).
 - **Fallback:** React Query's `onError` global callback catches unhandled API errors.
 
-## 7. Future Improvements
-- **Real-time:** Implement WebSockets or Server-Sent Events (SSE) for real-time board updates.
-- **Auth:** Add authentication (e.g., JWT or OAuth).
-- **Testing:** Add comprehensive unit and integration tests.
+## 7. Authentication
+**Decision:** Simple API Key (`X-API-Key`).
+**Rationale:**
+- **Requirement:** The assignment requested "Lightweight auth".
+- **Implementation:** A middleware checks for a specific header value. This prevents unauthorized public access without the complexity of a full JWT/Session system.
+
+## 8. Command Palette
+**Decision:** `cmdk` library.
+**Rationale:**
+- **UX:** Provides a fast, keyboard-centric way to navigate and perform actions (like creating issues).
+- **Accessibility:** Highly accessible and composable.
+
+## 9. Future Improvements
+- **Audit Logs**: Replace the static activity feed with a dynamic event sourcing or audit log table to track who changed what and when.
+- **Real-time**: Implement WebSockets or Server-Sent Events (SSE) for real-time board updates.
+- **Notifications**: System to alert users of assignments and status changes.
+- **Auth**: Add robust authentication (e.g., JWT or OAuth).
+- **Testing**: Add comprehensive unit and integration tests.

@@ -45,8 +45,11 @@ The core entities are **Issues**, **Users**, and **Labels**.
 - Go 1.21+
 - Node.js 18+
 - npm
+- Docker (optional, for containerized API)
 
 ### 1. Backend Setup
+
+#### Option A: Local (SQLite)
 
 Navigate to the `api` directory:
 ```bash
@@ -54,16 +57,7 @@ cd api
 go mod download
 ```
 
-**Configuration:**
-The API uses environment variables. A default configuration is provided, but you can override it.
-Create a `.env` file (optional):
-```env
-PORT=8080
-DB_PATH=./issues.db
-```
-
 **Run Migrations & Seed Data:**
-Initialize the database with schema and sample data:
 ```bash
 go run cmd/seed/main.go
 ```
@@ -74,6 +68,15 @@ go run cmd/api/main.go
 ```
 The API will run on `http://localhost:8080`.
 
+#### Option B: Docker
+
+Build and run the API container:
+```bash
+docker build -t issue-board-api ./api
+docker run -p 8080:8080 issue-board-api
+```
+*Note: The Docker container uses an internal SQLite database. Data will not persist across restarts unless you mount a volume.*
+
 ### 2. Frontend Setup
 
 Navigate to the `web` directory:
@@ -83,7 +86,7 @@ npm install
 ```
 
 **Configuration:**
-Create a `.env.local` file to point to your backend:
+Create a `.env.local` file:
 ```env
 NEXT_PUBLIC_API_URL=http://localhost:8080
 ```
@@ -94,9 +97,21 @@ npm run dev
 ```
 The app will be available at `http://localhost:3000`.
 
+## ✨ Features
+
+- **Kanban Board**: Drag and drop issues between columns (Backlog, Todo, In Progress, Done, Canceled).
+- **Issue Details**: Modal and full-page view for creating and editing issues.
+- **Filtering**: Filter by Assignee, Priority, and Labels (URL-synced).
+- **Command Palette**: Press `Cmd+K` (or `Ctrl+K`) to quickly navigate or create issues.
+- **Optimistic Updates**: UI updates immediately for a snappy experience.
+- **Skeleton Loaders**: Polished loading states.
+- **Authentication**: Simple `X-API-Key` header support for API security.
+
 ## 📚 API Documentation
 
-The API supports `X-API-Key` authentication (default key in seed: `test-api-key` if configured, otherwise open).
+The API supports `X-API-Key` authentication.
+- **Default Key**: `test-api-key` (configured in seed/env).
+- **Header**: `X-API-Key: test-api-key`
 
 ### Endpoints
 
@@ -111,36 +126,27 @@ The API supports `X-API-Key` authentication (default key in seed: `test-api-key`
 | `GET` | `/api/users` | List all users |
 | `GET` | `/api/labels` | List all labels |
 
-### Sample Requests
-
-**Get Issues (Filtered & Paginated):**
-```bash
-curl "http://localhost:8080/api/issues?status=todo&page=1&page_size=10"
-```
-
-**Create Issue:**
-```bash
-curl -X POST http://localhost:8080/api/issues \
-  -H "Content-Type: application/json" \
-  -d '{
-    "title": "Fix login bug",
-    "description": "Users cannot log in via email",
-    "status": "todo",
-    "priority": "high",
-    "assignee_id": "user-uuid-here"
-  }'
-```
-
 ## 🛠 Tech Stack Details
 
-- **Backend**: Go, Chi, SQLite, Go-Migrate (custom)
-- **Frontend**: Next.js 14, React, TypeScript, Tailwind CSS, shadcn/ui
+- **Backend**: Go, Chi, SQLite, Go-Migrate
+- **Frontend**: Next.js 14 (App Router), React, TypeScript, Tailwind CSS, shadcn/ui
 - **State**: TanStack Query (React Query) v5
 - **DnD**: @dnd-kit (Core, Sortable, Modifiers)
 - **Forms**: React Hook Form + Zod
 
+## ✅ Deliverables Checklist
+
+- [x] Repository with source
+- [x] README with architecture, setup, and API docs
+- [x] ADR capturing key choices
+- [x] Dockerfile for API
+- [x] Seed script for data population
+
 ## 🔮 Future Improvements
 
-- **Real-time Updates**: WebSockets for live board collaboration.
-- **Auth**: JWT-based authentication.
+- **Audit Logs**: Implement a real history tracking system to record all changes (status updates, assignments, edits) instead of the current static activity list.
+- **Real-time Updates**: WebSockets or Server-Sent Events (SSE) for live board collaboration.
+- **Notifications**: Email or in-app notifications when a user is assigned to an issue or mentioned.
+- **Advanced Search**: Full-text search and advanced filtering (e.g., `is:open assignee:@me`).
+- **Auth**: JWT-based authentication with OAuth providers (GitHub/Google).
 - **Testing**: E2E tests with Playwright.
