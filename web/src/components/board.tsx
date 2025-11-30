@@ -37,6 +37,7 @@ export function Board() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const processedHighlightRef = useRef<string | null>(null);
+  const highlightTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   // Handle highlight effect from URL params
   const highlightId = searchParams.get('highlight');
@@ -164,51 +165,49 @@ export function Board() {
 
     if (activeId === overId) return;
 
-    // Update React Query cache directly for immediate optimistic updates
-    queryClient.setQueryData<Issue[]>(['issues', filters], (old) => {
-      if (!old) return old;
+    // Only handle cross-column moves in onDragOver
+    // Same-column reordering will be handled in onDragEnd
+    const activeIssue = issues.find((i) => i.id === activeId);
+    if (!activeIssue) return;
 
-      const activeIndex = old.findIndex((i) => i.id === activeId);
-      if (activeIndex === -1) return old;
+    // Check if we're over a different column
+    const isOverColumn = COLUMNS.some((c) => c.id === overId);
 
-      const activeItem = old[activeIndex];
+    if (isOverColumn) {
+      const targetStatus = overId as IssueStatus;
 
-      // Check if we're over a column or an issue
-      const isOverColumn = COLUMNS.some((c) => c.id === overId);
+      // Only update if moving to a different column
+      if (activeIssue.status !== targetStatus) {
+        queryClient.setQueryData<Issue[]>(['issues', filters], (old) => {
+          if (!old) return old;
 
-      if (isOverColumn) {
-        // Dropped on a column droppable area
-        const targetStatus = overId as IssueStatus;
+          const activeIndex = old.findIndex((i) => i.id === activeId);
+          if (activeIndex === -1) return old;
 
-        if (activeItem.status === targetStatus) {
-          // Same column, no change needed
-          return old;
-        }
-
-        // Moving to a different column - place at the end
-        const newItems = [...old];
-        newItems[activeIndex] = { ...activeItem, status: targetStatus };
-        return newItems;
-      } else {
-        // Dropped on another issue
-        const overIndex = old.findIndex((i) => i.id === overId);
-        if (overIndex === -1) return old;
-
-        const overItem = old[overIndex];
-        const targetStatus = overItem.status;
-
-        // Create new array with the item moved
-        const newItems = arrayMove(old, activeIndex, overIndex);
-
-        // Update status if moving to different column
-        if (activeItem.status !== targetStatus) {
-          const movedIndex = newItems.findIndex((i) => i.id === activeId);
-          newItems[movedIndex] = { ...newItems[movedIndex], status: targetStatus };
-        }
-
-        return newItems;
+          const newItems = [...old];
+          newItems[activeIndex] = { ...newItems[activeIndex], status: targetStatus };
+          return newItems;
+        });
       }
-    });
+    } else {
+      // Hovering over another issue
+      const overIssue = issues.find((i) => i.id === overId);
+      if (!overIssue) return;
+
+      // Only update if moving to a different column
+      if (activeIssue.status !== overIssue.status) {
+        queryClient.setQueryData<Issue[]>(['issues', filters], (old) => {
+          if (!old) return old;
+
+          const activeIndex = old.findIndex((i) => i.id === activeId);
+          if (activeIndex === -1) return old;
+
+          const newItems = [...old];
+          newItems[activeIndex] = { ...newItems[activeIndex], status: overIssue.status };
+          return newItems;
+        });
+      }
+    }
   }
 
   function onDragEnd(event: DragEndEvent) {
@@ -224,37 +223,105 @@ export function Board() {
     }
 
     const activeId = active.id as string;
+    const overId = over.id as string;
 
-    // Get current state from React Query cache (already updated by onDragOver)
-    const currentIssues = queryClient.getQueryData<Issue[]>(['issues', filters]);
-    const movedIssue = currentIssues?.find((i) => i.id === activeId);
+    if (activeId === overId) return;
 
-    // Get original state to compare
+    // Get original issue
     const originalIssue = issues.find((i) => i.id === activeId);
-
-    if (!movedIssue || !originalIssue) {
+    if (!originalIssue) {
       queryClient.invalidateQueries({ queryKey: ['issues', filters] });
       return;
     }
 
+    // Determine target status
+    let targetStatus: IssueStatus = originalIssue.status;
+    const isOverColumn = COLUMNS.some((c) => c.id === overId);
+
+    if (isOverColumn) {
+      targetStatus = overId as IssueStatus;
+    } else {
+      const overIssue = issues.find((i) => i.id === overId);
+      if (overIssue) {
+        targetStatus = overIssue.status;
+      }
+    }
+
+    // Update cache with reordering
+    queryClient.setQueryData<Issue[]>(['issues', filters], (old) => {
+      if (!old) return old;
+
+      const activeIndex = old.findIndex((i) => i.id === activeId);
+      if (activeIndex === -1) return old;
+
+      let newItems = [...old];
+      const activeItem = newItems[activeIndex];
+
+      // If dropped on another issue (not column), reorder
+      if (!isOverColumn) {
+        const overIndex = newItems.findIndex((i) => i.id === overId);
+        if (overIndex !== -1) {
+          // Use arrayMove to reorder
+          newItems = arrayMove(newItems, activeIndex, overIndex);
+        }
+      }
+
+      // Update status if changed
+      const finalIndex = newItems.findIndex((i) => i.id === activeId);
+      if (newItems[finalIndex].status !== targetStatus) {
+        newItems[finalIndex] = { ...newItems[finalIndex], status: targetStatus };
+      }
+
+      // Calculate new order_index based on position in the target column
+      const columnItems = newItems.filter((i) => i.id === activeId || i.status === targetStatus);
+      const movedItemIndexInColumn = columnItems.findIndex((i) => i.id === activeId);
+
+      // Calculate order_index based on neighbors
+      let newOrderIndex: number;
+      if (movedItemIndexInColumn === 0) {
+        // First in column
+        const nextItem = columnItems[1];
+        newOrderIndex = nextItem ? nextItem.order_index - 1 : 0;
+      } else if (movedItemIndexInColumn === columnItems.length - 1) {
+        // Last in column
+        const prevItem = columnItems[movedItemIndexInColumn - 1];
+        newOrderIndex = prevItem ? prevItem.order_index + 1 : columnItems.length - 1;
+      } else {
+        // Middle of column - average of neighbors
+        const prevItem = columnItems[movedItemIndexInColumn - 1];
+        const nextItem = columnItems[movedItemIndexInColumn + 1];
+        newOrderIndex = (prevItem.order_index + nextItem.order_index) / 2;
+      }
+
+      newItems[finalIndex] = { ...newItems[finalIndex], order_index: newOrderIndex };
+
+      return newItems;
+    });
+
     // Highlight the card after drop
+    // Clear any existing highlight timeout
+    if (highlightTimeoutRef.current) {
+      clearTimeout(highlightTimeoutRef.current);
+    }
+
     setLastMovedId(activeId);
-    setTimeout(() => {
+    highlightTimeoutRef.current = setTimeout(() => {
       setLastMovedId(null);
+      highlightTimeoutRef.current = null;
     }, 2000);
 
-    // Only persist if status actually changed
-    if (movedIssue.status !== originalIssue.status) {
-      // Mutation will persist to server
-      // onMutate will update cache again (redundant but safe)
-      // onSuccess will refetch for authoritative state
+    // Get updated issue from cache
+    const updatedIssues = queryClient.getQueryData<Issue[]>(['issues', filters]);
+    const movedIssue = updatedIssues?.find((i) => i.id === activeId);
+
+    // Persist to server
+    if (movedIssue) {
       moveIssueMutation.mutate({
         id: activeId,
         status: movedIssue.status,
         orderIndex: movedIssue.order_index,
       });
     }
-    // If no status change, cache already has correct state, no action needed
   }
 
   if (isLoading) {

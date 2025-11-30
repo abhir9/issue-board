@@ -23,8 +23,8 @@ The core entities are **Issues**, **Users**, and **Labels**.
 - `id` (UUID): Unique identifier
 - `title` (String): Issue summary
 - `description` (Text): Detailed description
-- `status` (Enum): `backlog`, `todo`, `in_progress`, `done`, `canceled`
-- `priority` (Enum): `low`, `medium`, `high`
+- `status` (Enum): `Backlog`, `Todo`, `In Progress`, `Done`, `Canceled`
+- `priority` (Enum): `Low`, `Medium`, `High`, `Critical`
 - `assignee_id` (UUID, FK): Linked User
 - `order_index` (Float): For sorting within columns
 - `created_at` / `updated_at` (Timestamp)
@@ -61,6 +61,11 @@ go mod download
 ```bash
 go run cmd/seed/main.go
 ```
+This will:
+- Apply database migrations from `/db/migrations/`
+- Create 3 users (Alice, Bob, Charlie)
+- Create 4 labels (Bug, Feature, Enhancement, Documentation)
+- Create 20 issues spread across all statuses
 
 **Start the Server:**
 ```bash
@@ -88,7 +93,8 @@ npm install
 **Configuration:**
 Create a `.env.local` file:
 ```env
-NEXT_PUBLIC_API_URL=http://localhost:8080
+NEXT_PUBLIC_API_URL=http://localhost:8080/api
+NEXT_PUBLIC_API_KEY=J3yPAMuS0j5w4AWj6P0bh2l7prZKBSq6
 ```
 
 **Start the Development Server:**
@@ -110,14 +116,15 @@ The app will be available at `http://localhost:3000`.
 ## 📚 API Documentation
 
 The API supports `X-API-Key` authentication.
-- **Default Key**: `test-api-key` (configured in seed/env).
-- **Header**: `X-API-Key: test-api-key`
+- **Default Key**: `J3yPAMuS0j5w4AWj6P0bh2l7prZKBSq6`
+- **Header**: `X-API-Key: J3yPAMuS0j5w4AWj6P0bh2l7prZKBSq6`
+- **Swagger Docs**: Available at `http://localhost:8080/docs`
 
 ### Endpoints
 
 | Method | Endpoint | Description |
 |--------|----------|-------------|
-| `GET` | `/api/issues` | List issues. Params: `status`, `assignee`, `priority`, `page`, `page_size` |
+| `GET` | `/api/issues` | List issues. Params: `status`, `assignee`, `priority`, `labels`, `page`, `page_size` |
 | `POST` | `/api/issues` | Create a new issue |
 | `GET` | `/api/issues/{id}` | Get issue details |
 | `PATCH` | `/api/issues/{id}` | Update issue details |

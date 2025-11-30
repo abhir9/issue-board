@@ -88,9 +88,24 @@ func (h *Handler) CreateIssue(w http.ResponseWriter, r *http.Request) {
 	id := uuid.New().String()
 	now := time.Now()
 
-	// Simple logic to put it at the end of the column could go here,
-	// but for now we'll just default OrderIndex to 0 or handle it in the repo if we want strict ordering.
-	// For this MVP, we rely on the client or a separate reorder.
+	// Get minimum order_index for this status column to place new issue at the top
+	existingIssues, err := h.Repo.GetIssues([]string{req.Status}, "", nil, nil, 1, 0)
+	if err != nil {
+		utils.WriteError(w, http.StatusInternalServerError, "Failed to fetch existing issues", map[string]interface{}{"error": err.Error()})
+		return
+	}
+
+	// Calculate order_index: find min and subtract 1 to place at top
+	orderIndex := 0.0
+	if len(existingIssues) > 0 {
+		minIndex := existingIssues[0].OrderIndex
+		for _, issue := range existingIssues {
+			if issue.OrderIndex < minIndex {
+				minIndex = issue.OrderIndex
+			}
+		}
+		orderIndex = minIndex - 1
+	}
 
 	issue := models.Issue{
 		ID:          id,
@@ -101,7 +116,7 @@ func (h *Handler) CreateIssue(w http.ResponseWriter, r *http.Request) {
 		AssigneeID:  req.AssigneeID,
 		CreatedAt:   now,
 		UpdatedAt:   now,
-		OrderIndex:  0, // TODO: Fetch max order index for column
+		OrderIndex:  orderIndex,
 	}
 
 	if err := h.Repo.CreateIssue(issue); err != nil {
@@ -219,7 +234,7 @@ func (h *Handler) UpdateIssue(w http.ResponseWriter, r *http.Request) {
 // @Accept json
 // @Produce json
 // @Param id path string true "Issue ID"
-// @Param move body models.MoveIssueRequest true "Move details"
+// @Param move body models.UpdateIssueRequest true "Move details (status and order_index)"
 // @Success 200 {string} string "OK"
 // @Failure 400 {string} string "Bad Request"
 // @Failure 500 {string} string "Internal Server Error"
@@ -227,16 +242,21 @@ func (h *Handler) UpdateIssue(w http.ResponseWriter, r *http.Request) {
 // @Security ApiKeyAuth
 func (h *Handler) MoveIssue(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
-	var req models.MoveIssueRequest
+	var req models.UpdateIssueRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		utils.WriteError(w, http.StatusBadRequest, "Invalid request body", map[string]interface{}{"error": err.Error()})
 		return
 	}
 
 	updates := map[string]interface{}{
-		"status":      req.Status,
-		"order_index": req.OrderIndex,
-		"updated_at":  time.Now(),
+		"updated_at": time.Now(),
+	}
+
+	if req.Status != nil {
+		updates["status"] = *req.Status
+	}
+	if req.OrderIndex != nil {
+		updates["order_index"] = *req.OrderIndex
 	}
 
 	if err := h.Repo.UpdateIssue(id, updates); err != nil {

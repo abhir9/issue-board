@@ -44,9 +44,5 @@ type UpdateIssueRequest struct {
 	Priority    *string  `json:"priority"`
 	AssigneeID  *string  `json:"assignee_id"`
 	LabelIDs    []string `json:"label_ids"`
-}
-
-type MoveIssueRequest struct {
-	Status     string  `json:"status"`
-	OrderIndex float64 `json:"order_index"`
+	OrderIndex  *float64 `json:"order_index"`
 }
