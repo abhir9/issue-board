@@ -76,12 +76,10 @@ export function Board() {
     queryFn: () => getIssues(filters),
   });
 
-  // Local state for optimistic updates during drag only
-  const [draggedItems, setDraggedItems] = useState<Issue[] | null>(null);
   const isDraggingRef = useRef(false);
 
-  // Use dragged items during drag, otherwise use server data
-  const displayIssues = draggedItems ?? issues;
+  // Use React Query cache as single source of truth
+  const displayIssues = issues;
 
   const columns = useMemo(() => {
     const cols = new Map<IssueStatus, Issue[]>();
@@ -133,16 +131,11 @@ export function Board() {
       return { previousIssues };
     },
     onError: (err, newTodo, context) => {
-      queryClient.setQueryData(['issues'], context?.previousIssues);
-      setDraggedItems(null);
+      queryClient.setQueryData(['issues', filters], context?.previousIssues);
     },
     onSuccess: () => {
-      // Clear draggedItems first, then invalidate
-      setDraggedItems(null);
-      // Use setTimeout to break out of the render cycle
-      setTimeout(() => {
-        queryClient.invalidateQueries({ queryKey: ['issues'] });
-      }, 0);
+      // Refetch to get authoritative server state
+      queryClient.invalidateQueries({ queryKey: ['issues', filters] });
     },
   });
 
@@ -156,7 +149,6 @@ export function Board() {
 
   function onDragStart(event: DragStartEvent) {
     isDraggingRef.current = true;
-    setDraggedItems(issues); // Initialize with current issues
     if (event.active.data.current?.type === 'Issue') {
       setActiveIssue(event.active.data.current.issue as Issue);
     }
@@ -171,13 +163,14 @@ export function Board() {
 
     if (activeId === overId) return;
 
-    setDraggedItems((items) => {
-      if (!items) return items;
+    // Update React Query cache directly for immediate optimistic updates
+    queryClient.setQueryData<Issue[]>(['issues', filters], (old) => {
+      if (!old) return old;
 
-      const activeIndex = items.findIndex((i) => i.id === activeId);
-      if (activeIndex === -1) return items;
+      const activeIndex = old.findIndex((i) => i.id === activeId);
+      if (activeIndex === -1) return old;
 
-      const activeItem = items[activeIndex];
+      const activeItem = old[activeIndex];
 
       // Check if we're over a column or an issue
       const isOverColumn = COLUMNS.some((c) => c.id === overId);
@@ -188,23 +181,23 @@ export function Board() {
 
         if (activeItem.status === targetStatus) {
           // Same column, no change needed
-          return items;
+          return old;
         }
 
         // Moving to a different column - place at the end
-        const newItems = [...items];
+        const newItems = [...old];
         newItems[activeIndex] = { ...activeItem, status: targetStatus };
         return newItems;
       } else {
         // Dropped on another issue
-        const overIndex = items.findIndex((i) => i.id === overId);
-        if (overIndex === -1) return items;
+        const overIndex = old.findIndex((i) => i.id === overId);
+        if (overIndex === -1) return old;
 
-        const overItem = items[overIndex];
+        const overItem = old[overIndex];
         const targetStatus = overItem.status;
 
         // Create new array with the item moved
-        const newItems = arrayMove(items, activeIndex, overIndex);
+        const newItems = arrayMove(old, activeIndex, overIndex);
 
         // Update status if moving to different column
         if (activeItem.status !== targetStatus) {
@@ -224,42 +217,44 @@ export function Board() {
     setActiveIssue(null);
 
     if (!over) {
-      // Reset dragged items if dropped outside
-      setDraggedItems(null);
+      // Revert optimistic update if dropped outside
+      queryClient.invalidateQueries({ queryKey: ['issues', filters] });
       return;
     }
 
     const activeId = active.id as string;
 
-    // Find the final state of the moved issue
-    const movedIssue = draggedItems?.find((i) => i.id === activeId);
+    // Get current state from React Query cache (already updated by onDragOver)
+    const currentIssues = queryClient.getQueryData<Issue[]>(['issues', filters]);
+    const movedIssue = currentIssues?.find((i) => i.id === activeId);
+
+    // Get original state to compare
+    const originalIssues = queryClient.getQueryData<Issue[]>(['issues', filters]);
     const originalIssue = issues.find((i) => i.id === activeId);
 
     if (!movedIssue || !originalIssue) {
-      setDraggedItems(null);
+      queryClient.invalidateQueries({ queryKey: ['issues', filters] });
       return;
     }
 
     // Highlight the card after drop
-    console.log('Setting lastMovedId to:', activeId);
     setLastMovedId(activeId);
     setTimeout(() => {
-      console.log('Clearing lastMovedId');
       setLastMovedId(null);
     }, 2000);
 
     // Only persist if status actually changed
     if (movedIssue.status !== originalIssue.status) {
+      // Mutation will persist to server
+      // onMutate will update cache again (redundant but safe)
+      // onSuccess will refetch for authoritative state
       moveIssueMutation.mutate({
         id: activeId,
         status: movedIssue.status,
         orderIndex: movedIssue.order_index,
       });
-      // Don't clear draggedItems here - let mutation's onSettled handle it
-    } else {
-      // If no change, clear immediately since no mutation will run
-      setDraggedItems(null);
     }
+    // If no status change, cache already has correct state, no action needed
   }
 
   if (isLoading) {
