@@ -9,6 +9,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"time"
 
 	_ "issue-board-backend/docs"
 
@@ -95,8 +96,46 @@ func main() {
 		port = "8080"
 	}
 
+	// Start keep-alive pinger in production (Render)
+	if os.Getenv("RENDER") != "" || os.Getenv("ENABLE_KEEP_ALIVE") == "true" {
+		appURL := os.Getenv("RENDER_EXTERNAL_URL")
+		if appURL == "" {
+			appURL = os.Getenv("APP_URL")
+		}
+		if appURL != "" {
+			go keepAlive(appURL)
+			log.Printf("Keep-alive pinger started, target: %s/api/health", appURL)
+		} else {
+			log.Println("Keep-alive disabled: APP_URL or RENDER_EXTERNAL_URL not set")
+		}
+	}
+
 	fmt.Printf("Server running on port %s\n", port)
 	if err := http.ListenAndServe(":"+port, r); err != nil {
 		log.Fatalf("Failed to start server: %v", err)
+	}
+}
+
+// keepAlive pings the health endpoint every 5 minutes to prevent Render free tier sleep
+func keepAlive(baseURL string) {
+	ticker := time.NewTicker(5 * time.Minute)
+	defer ticker.Stop()
+
+	client := &http.Client{
+		Timeout: 10 * time.Second,
+	}
+
+	// Initial delay to allow server to start
+	time.Sleep(30 * time.Second)
+
+	for range ticker.C {
+		healthURL := baseURL + "/api/health"
+		resp, err := client.Get(healthURL)
+		if err != nil {
+			log.Printf("Keep-alive ping failed: %v", err)
+			continue
+		}
+		resp.Body.Close()
+		log.Printf("Keep-alive ping successful: %s (status: %d)", healthURL, resp.StatusCode)
 	}
 }
