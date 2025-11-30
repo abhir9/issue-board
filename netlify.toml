@@ -5,7 +5,7 @@
 
 [build.environment]
   NODE_VERSION = "20"
-  NEXT_PUBLIC_API_URL = "https://issue-board-api.onrender.com/api"
+  NEXT_PUBLIC_API_URL = "https://issue-board-backend.onrender.com/api"
 
 [[plugins]]
   package = "@netlify/plugin-nextjs"
