@@ -134,11 +134,15 @@ export function Board() {
     },
     onError: (err, newTodo, context) => {
       queryClient.setQueryData(['issues'], context?.previousIssues);
-      setDraggedItems(null); // Clear on error
+      setDraggedItems(null);
     },
-    onSettled: () => {
-      setDraggedItems(null); // Clear after mutation completes
-      queryClient.invalidateQueries({ queryKey: ['issues'] });
+    onSuccess: () => {
+      // Clear draggedItems first, then invalidate
+      setDraggedItems(null);
+      // Use setTimeout to break out of the render cycle
+      setTimeout(() => {
+        queryClient.invalidateQueries({ queryKey: ['issues'] });
+      }, 0);
     },
   });
 
