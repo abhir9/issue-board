@@ -100,7 +100,7 @@ export default function IssueDetailsPage() {
       queryClient.invalidateQueries({ queryKey: ['issues'] });
       queryClient.invalidateQueries({ queryKey: ['issue', id] });
       toast.success('Issue updated successfully');
-      router.back();
+      router.push('/issues');
     },
     onError: () => {
       toast.error('Failed to update issue');
@@ -112,7 +112,7 @@ export default function IssueDetailsPage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['issues'] });
       toast.success('Issue deleted successfully');
-      router.back();
+      router.push('/issues');
     },
     onError: () => {
       toast.error('Failed to delete issue');
@@ -136,7 +136,7 @@ export default function IssueDetailsPage() {
       <div className="flex flex-col h-full bg-gray-50">
         <header className="border-b px-6 py-3 flex items-center justify-between bg-white shrink-0">
           <div className="flex items-center gap-4">
-            <Button variant="ghost" size="icon" onClick={() => router.back()} aria-label="Go back">
+            <Button variant="ghost" size="icon" onClick={() => router.push('/issues')} aria-label="Go back">
               <ArrowLeft className="h-4 w-4" />
             </Button>
             <h1 className="font-semibold text-lg">Issue Details</h1>
