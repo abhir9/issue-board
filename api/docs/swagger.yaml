@@ -1,0 +1,354 @@
+basePath: /api
+definitions:
+  issue-board-backend_internal_models.CreateIssueRequest:
+    properties:
+      assignee_id:
+        type: string
+      description:
+        type: string
+      label_ids:
+        items:
+          type: string
+        type: array
+      priority:
+        type: string
+      status:
+        type: string
+      title:
+        type: string
+    type: object
+  issue-board-backend_internal_models.Issue:
+    properties:
+      assignee:
+        allOf:
+        - $ref: '#/definitions/issue-board-backend_internal_models.User'
+        description: For response population
+      assignee_id:
+        type: string
+      created_at:
+        type: string
+      description:
+        type: string
+      id:
+        type: string
+      labels:
+        description: For response population
+        items:
+          $ref: '#/definitions/issue-board-backend_internal_models.Label'
+        type: array
+      order_index:
+        type: number
+      priority:
+        description: Low, Medium, High, Critical
+        type: string
+      status:
+        description: Backlog, Todo, In Progress, Done, Canceled
+        type: string
+      title:
+        type: string
+      updated_at:
+        type: string
+    type: object
+  issue-board-backend_internal_models.Label:
+    properties:
+      color:
+        type: string
+      id:
+        type: string
+      name:
+        type: string
+    type: object
+  issue-board-backend_internal_models.MoveIssueRequest:
+    properties:
+      order_index:
+        type: number
+      status:
+        type: string
+    type: object
+  issue-board-backend_internal_models.UpdateIssueRequest:
+    properties:
+      assignee_id:
+        type: string
+      description:
+        type: string
+      label_ids:
+        items:
+          type: string
+        type: array
+      priority:
+        type: string
+      status:
+        type: string
+      title:
+        type: string
+    type: object
+  issue-board-backend_internal_models.User:
+    properties:
+      avatar_url:
+        type: string
+      id:
+        type: string
+      name:
+        type: string
+    type: object
+info:
+  contact:
+    email: support@swagger.io
+    name: API Support
+    url: http://www.swagger.io/support
+  description: This is a simple issue board API.
+  license:
+    name: Apache 2.0
+    url: http://www.apache.org/licenses/LICENSE-2.0.html
+  termsOfService: http://swagger.io/terms/
+  title: Issue Board API
+  version: "1.0"
+paths:
+  /issues:
+    get:
+      consumes:
+      - application/json
+      description: Get a list of issues, optionally filtered by status, assignee,
+        or priority
+      parameters:
+      - description: Filter by status
+        in: query
+        name: status
+        type: string
+      - description: Filter by assignee ID
+        in: query
+        name: assignee
+        type: string
+      - description: Filter by priority
+        in: query
+        name: priority
+        type: string
+      - description: Filter by priority
+        in: query
+        name: priority
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/issue-board-backend_internal_models.Issue'
+            type: array
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      security:
+      - ApiKeyAuth: []
+      summary: Get all issues
+      tags:
+      - issues
+    post:
+      consumes:
+      - application/json
+      description: Create a new issue with the provided details
+      parameters:
+      - description: Issue content
+        in: body
+        name: issue
+        required: true
+        schema:
+          $ref: '#/definitions/issue-board-backend_internal_models.CreateIssueRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/issue-board-backend_internal_models.Issue'
+        "400":
+          description: Bad Request
+          schema:
+            type: string
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      security:
+      - ApiKeyAuth: []
+      summary: Create a new issue
+      tags:
+      - issues
+  /issues/{id}:
+    delete:
+      description: Delete an issue by ID
+      parameters:
+      - description: Issue ID
+        in: path
+        name: id
+        required: true
+        type: string
+      responses:
+        "204":
+          description: No Content
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      security:
+      - ApiKeyAuth: []
+      summary: Delete an issue
+      tags:
+      - issues
+    get:
+      consumes:
+      - application/json
+      description: Get details of a specific issue by ID
+      parameters:
+      - description: Issue ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/issue-board-backend_internal_models.Issue'
+        "404":
+          description: Not Found
+          schema:
+            type: string
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      security:
+      - ApiKeyAuth: []
+      summary: Get a specific issue
+      tags:
+      - issues
+    patch:
+      consumes:
+      - application/json
+      description: Update details of an existing issue
+      parameters:
+      - description: Issue ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Issue updates
+        in: body
+        name: issue
+        required: true
+        schema:
+          $ref: '#/definitions/issue-board-backend_internal_models.UpdateIssueRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/issue-board-backend_internal_models.Issue'
+        "400":
+          description: Bad Request
+          schema:
+            type: string
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      security:
+      - ApiKeyAuth: []
+      summary: Update an issue
+      tags:
+      - issues
+  /issues/{id}/move:
+    patch:
+      consumes:
+      - application/json
+      description: Move an issue to a new status and/or order
+      parameters:
+      - description: Issue ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Move details
+        in: body
+        name: move
+        required: true
+        schema:
+          $ref: '#/definitions/issue-board-backend_internal_models.MoveIssueRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: string
+        "400":
+          description: Bad Request
+          schema:
+            type: string
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      security:
+      - ApiKeyAuth: []
+      summary: Move an issue
+      tags:
+      - issues
+  /labels:
+    get:
+      consumes:
+      - application/json
+      description: Get a list of all labels
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/issue-board-backend_internal_models.Label'
+            type: array
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      security:
+      - ApiKeyAuth: []
+      summary: Get all labels
+      tags:
+      - labels
+  /users:
+    get:
+      consumes:
+      - application/json
+      description: Get a list of all users
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/issue-board-backend_internal_models.User'
+            type: array
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      security:
+      - ApiKeyAuth: []
+      summary: Get all users
+      tags:
+      - users
+securityDefinitions:
+  ApiKeyAuth:
+    in: header
+    name: X-API-Key
+    type: apiKey
+swagger: "2.0"
