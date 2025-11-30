@@ -1,14 +1,17 @@
 import type { NextConfig } from 'next';
 
 const nextConfig: NextConfig = {
-  images: {
-    remotePatterns: [
-      {
-        protocol: 'https',
-        hostname: 'api.dicebear.com',
-      },
-    ],
-  },
+    output: 'export',
+    trailingSlash: true,
+    images: {
+        unoptimized: true,
+        remotePatterns: [
+            {
+                protocol: 'https',
+                hostname: 'api.dicebear.com',
+            },
+        ],
+    },
 };
 
 export default nextConfig;
