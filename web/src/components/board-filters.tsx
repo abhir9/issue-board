@@ -44,7 +44,7 @@ export function BoardFilters() {
   return (
     <div className="flex items-center gap-2">
       <Select value={assignee} onValueChange={(v) => updateFilter('assignee', v)}>
-        <SelectTrigger className="w-[150px] h-9">
+        <SelectTrigger className="w-[150px] h-9" aria-label="Filter by assignee">
           <SelectValue placeholder="Assignee" />
         </SelectTrigger>
         <SelectContent>
@@ -58,7 +58,7 @@ export function BoardFilters() {
       </Select>
 
       <Select value={priority} onValueChange={(v) => updateFilter('priority', v)}>
-        <SelectTrigger className="w-[150px] h-9">
+        <SelectTrigger className="w-[150px] h-9" aria-label="Filter by priority">
           <SelectValue placeholder="Priority" />
         </SelectTrigger>
         <SelectContent>
