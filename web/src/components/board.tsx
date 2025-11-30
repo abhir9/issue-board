@@ -229,7 +229,6 @@ export function Board() {
     const movedIssue = currentIssues?.find((i) => i.id === activeId);
 
     // Get original state to compare
-    const originalIssues = queryClient.getQueryData<Issue[]>(['issues', filters]);
     const originalIssue = issues.find((i) => i.id === activeId);
 
     if (!movedIssue || !originalIssue) {
