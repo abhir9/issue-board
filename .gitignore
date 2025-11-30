@@ -41,7 +41,7 @@ yarn-error.log*
 next-env.d.ts
 
 # next.js
-.next
+web/.next/*
 
 # node_modules
 web/node_modules/*
