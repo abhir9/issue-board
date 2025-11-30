@@ -1,8 +1,8 @@
 package main
 
 import (
+	"api/internal/database"
 	"fmt"
-	"issue-board-backend/internal/database"
 	"log"
 
 	"github.com/google/uuid"

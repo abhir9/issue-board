@@ -1,9 +1,9 @@
 package handlers
 
 import (
+	"api/internal/database"
 	"database/sql"
 	"fmt"
-	"issue-board-backend/internal/database"
 	"strings"
 	"testing"
 

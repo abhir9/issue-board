@@ -1,9 +1,9 @@
 package database
 
 import (
+	"api/internal/models"
 	"database/sql"
 	"fmt"
-	"issue-board-backend/internal/models"
 	"strings"
 )
 

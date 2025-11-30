@@ -69,7 +69,7 @@ const docTemplate = `{
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/issue-board-backend_internal_models.Issue"
+                                "$ref": "#/definitions/api_internal_models.Issue"
                             }
                         }
                     },
@@ -105,7 +105,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/issue-board-backend_internal_models.CreateIssueRequest"
+                            "$ref": "#/definitions/api_internal_models.CreateIssueRequest"
                         }
                     }
                 ],
@@ -113,7 +113,7 @@ const docTemplate = `{
                     "201": {
                         "description": "Created",
                         "schema": {
-                            "$ref": "#/definitions/issue-board-backend_internal_models.Issue"
+                            "$ref": "#/definitions/api_internal_models.Issue"
                         }
                     },
                     "400": {
@@ -162,7 +162,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/issue-board-backend_internal_models.Issue"
+                            "$ref": "#/definitions/api_internal_models.Issue"
                         }
                     },
                     "404": {
@@ -242,7 +242,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/issue-board-backend_internal_models.UpdateIssueRequest"
+                            "$ref": "#/definitions/api_internal_models.UpdateIssueRequest"
                         }
                     }
                 ],
@@ -250,7 +250,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/issue-board-backend_internal_models.Issue"
+                            "$ref": "#/definitions/api_internal_models.Issue"
                         }
                     },
                     "400": {
@@ -300,7 +300,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/issue-board-backend_internal_models.MoveIssueRequest"
+                            "$ref": "#/definitions/api_internal_models.MoveIssueRequest"
                         }
                     }
                 ],
@@ -350,7 +350,7 @@ const docTemplate = `{
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/issue-board-backend_internal_models.Label"
+                                "$ref": "#/definitions/api_internal_models.Label"
                             }
                         }
                     },
@@ -387,7 +387,7 @@ const docTemplate = `{
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/issue-board-backend_internal_models.User"
+                                "$ref": "#/definitions/api_internal_models.User"
                             }
                         }
                     },
@@ -407,7 +407,7 @@ const docTemplate = `{
         }
     },
     "definitions": {
-        "issue-board-backend_internal_models.CreateIssueRequest": {
+        "api_internal_models.CreateIssueRequest": {
             "type": "object",
             "properties": {
                 "assignee_id": {
@@ -433,14 +433,14 @@ const docTemplate = `{
                 }
             }
         },
-        "issue-board-backend_internal_models.Issue": {
+        "api_internal_models.Issue": {
             "type": "object",
             "properties": {
                 "assignee": {
                     "description": "For response population",
                     "allOf": [
                         {
-                            "$ref": "#/definitions/issue-board-backend_internal_models.User"
+                            "$ref": "#/definitions/api_internal_models.User"
                         }
                     ]
                 },
@@ -460,7 +460,7 @@ const docTemplate = `{
                     "description": "For response population",
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/issue-board-backend_internal_models.Label"
+                        "$ref": "#/definitions/api_internal_models.Label"
                     }
                 },
                 "order_index": {
@@ -482,7 +482,7 @@ const docTemplate = `{
                 }
             }
         },
-        "issue-board-backend_internal_models.Label": {
+        "api_internal_models.Label": {
             "type": "object",
             "properties": {
                 "color": {
@@ -496,7 +496,7 @@ const docTemplate = `{
                 }
             }
         },
-        "issue-board-backend_internal_models.MoveIssueRequest": {
+        "api_internal_models.MoveIssueRequest": {
             "type": "object",
             "properties": {
                 "order_index": {
@@ -507,7 +507,7 @@ const docTemplate = `{
                 }
             }
         },
-        "issue-board-backend_internal_models.UpdateIssueRequest": {
+        "api_internal_models.UpdateIssueRequest": {
             "type": "object",
             "properties": {
                 "assignee_id": {
@@ -533,7 +533,7 @@ const docTemplate = `{
                 }
             }
         },
-        "issue-board-backend_internal_models.User": {
+        "api_internal_models.User": {
             "type": "object",
             "properties": {
                 "avatar_url": {

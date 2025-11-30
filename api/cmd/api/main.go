@@ -2,16 +2,16 @@ package main
 
 // go run github.com/swaggo/swag/cmd/swag init -g cmd/api/main.go --parseDependency --parseInternal
 import (
+	"api/internal/database"
+	"api/internal/handlers"
+	customMiddleware "api/internal/middleware"
 	"fmt"
-	"issue-board-backend/internal/database"
-	"issue-board-backend/internal/handlers"
-	customMiddleware "issue-board-backend/internal/middleware"
 	"log"
 	"net/http"
 	"os"
 	"time"
 
-	_ "issue-board-backend/docs"
+	_ "api/docs"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"

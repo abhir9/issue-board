@@ -1,14 +1,14 @@
 package handlers
 
 import (
+	"api/internal/database"
+	"api/internal/models"
 	"encoding/json"
-	"issue-board-backend/internal/database"
-	"issue-board-backend/internal/models"
 	"net/http"
 	"strconv"
 	"time"
 
-	"issue-board-backend/internal/utils"
+	"api/internal/utils"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/google/uuid"

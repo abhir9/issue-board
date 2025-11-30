@@ -1,9 +1,9 @@
 package handlers
 
 import (
+	"api/internal/models"
 	"bytes"
 	"encoding/json"
-	"issue-board-backend/internal/models"
 	"net/http"
 	"net/http/httptest"
 	"testing"
