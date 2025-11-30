@@ -69,6 +69,13 @@ func main() {
 		httpSwagger.URL("/docs/doc.json"),
 	))
 
+	// Health check endpoint (no auth required)
+	r.Get("/api/health", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+		w.Write([]byte(`{"status":"ok"}`))
+	})
+
 	r.Route("/api", func(r chi.Router) {
 		r.Use(customMiddleware.APIKeyAuth) // Apply Auth middleware to /api routes
 
