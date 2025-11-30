@@ -134,8 +134,10 @@ export function Board() {
     },
     onError: (err, newTodo, context) => {
       queryClient.setQueryData(['issues'], context?.previousIssues);
+      setDraggedItems(null); // Clear on error
     },
     onSettled: () => {
+      setDraggedItems(null); // Clear after mutation completes
       queryClient.invalidateQueries({ queryKey: ['issues'] });
     },
   });
@@ -249,10 +251,11 @@ export function Board() {
         status: movedIssue.status,
         orderIndex: movedIssue.order_index,
       });
+      // Don't clear draggedItems here - let mutation's onSettled handle it
+    } else {
+      // If no change, clear immediately since no mutation will run
+      setDraggedItems(null);
     }
-
-    // Clear dragged items to go back to server data
-    setDraggedItems(null);
   }
 
   if (isLoading) {
