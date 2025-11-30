@@ -10,7 +10,7 @@ func APIKeyAuth(next http.Handler) http.Handler {
 		// For simplicity, we hardcode the key here as requested.
 		// In a real app, this should come from environment variables or a database.
 		apiKey := r.Header.Get("X-API-Key")
-		if apiKey != "my-secret-key" {
+		if apiKey != "J3yPAMuS0j5w4AWj6P0bh2l7prZKBSq6" {
 			http.Error(w, "Unauthorized", http.StatusUnauthorized)
 			return
 		}

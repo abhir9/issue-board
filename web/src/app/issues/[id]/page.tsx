@@ -63,7 +63,7 @@ export default function IssueDetailsPage() {
     queryFn: async () => {
       const { data } = await axios.get<Issue>(`${API_BASE_URL}/issues/${id}`, {
         headers: {
-          'X-API-Key': 'my-secret-key',
+          'X-API-Key': process.env.NEXT_PUBLIC_API_KEY || '',
         },
       });
       return data;
