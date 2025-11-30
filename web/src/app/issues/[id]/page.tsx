@@ -42,6 +42,7 @@ import {
 } from '@/components/ui/command';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { cn } from '@/lib/utils';
+import { IssueDetailsSkeleton } from '@/components/issue-details-skeleton';
 
 // Form data type that includes both Issue properties and label_ids for updates
 type IssueFormData = Partial<Issue> & {
@@ -118,7 +119,7 @@ export default function IssueDetailsPage() {
     },
   });
 
-  if (isLoading) return <div className="p-8">Loading...</div>;
+  if (isLoading) return <IssueDetailsSkeleton />;
   if (!issue) return <div className="p-8">Issue not found</div>;
 
   const handleSave = () => {
