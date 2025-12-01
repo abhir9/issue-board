@@ -16,10 +16,10 @@ function ColumnComponent({ id, title, issues }: ColumnProps) {
   const { setNodeRef } = useDroppable({ id });
 
   return (
-    <div className="flex flex-col bg-gray-50/50 rounded-lg border border-gray-200 w-80 shrink-0">
-      <div className="p-3 font-semibold text-sm flex justify-between items-center border-b border-gray-100 bg-white rounded-t-lg">
+    <div className="flex flex-col bg-white rounded-xl border border-slate-200 shadow-sm w-80 shrink-0">
+      <div className="p-3 font-semibold text-sm text-slate-900 flex justify-between items-center border-b border-slate-200 bg-slate-50 rounded-t-xl">
         {title}
-        <span className="text-xs text-gray-500 bg-gray-100 px-2 py-0.5 rounded-full">
+        <span className="text-xs font-medium text-slate-800 bg-slate-200/80 px-2 py-0.5 rounded-full">
           {issues.length}
         </span>
       </div>
@@ -31,8 +31,11 @@ function ColumnComponent({ id, title, issues }: ColumnProps) {
         >
           <div ref={setNodeRef} className="min-h-[150px]">
             {issues.length === 0 ? (
-              <div className="h-full flex flex-col items-center justify-center text-gray-400 p-4 min-h-[150px] border-2 border-dashed border-gray-200 rounded-lg">
-                <span className="text-sm">No issues</span>
+              <div className="h-full flex flex-col items-center justify-center gap-1 text-slate-600 p-4 min-h-[150px] border-2 border-dashed border-slate-300 rounded-lg bg-slate-50">
+                <span className="text-sm font-medium text-slate-800">No issues</span>
+                <span className="text-xs text-slate-600 text-center">
+                  Drag or create an issue here to populate this column
+                </span>
               </div>
             ) : (
               issues.map((issue) => <IssueCard key={issue.id} issue={issue} />)

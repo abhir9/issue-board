@@ -147,7 +147,12 @@ export function BoardFilters() {
       </Select>
 
       {hasFilters && (
-        <Button variant="ghost" size="sm" onClick={clearFilters} className="h-9 px-2 text-gray-500">
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={clearFilters}
+          className="h-9 px-2 text-slate-700 hover:text-slate-900"
+        >
           <X className="h-4 w-4 mr-1" /> Clear
         </Button>
       )}

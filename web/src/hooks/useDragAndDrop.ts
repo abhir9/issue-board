@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react';
+import { useRef, useState, useEffect } from 'react';
 import { useSensor, useSensors, PointerSensor } from '@dnd-kit/core';
 import { arrayMove } from '@dnd-kit/sortable';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
@@ -8,6 +8,7 @@ import { Issue, IssueStatus } from '@/types';
 import { ISSUE_COLUMNS } from '@/constants/issues';
 
 const DRAG_ACTIVATION_DISTANCE_PX = 5;
+const REFETCH_DELAY_MS = 1000; // Delay refetch to avoid race conditions
 
 export function useDragAndDrop(
   issues: Issue[],
@@ -20,6 +21,30 @@ export function useDragAndDrop(
   const queryClient = useQueryClient();
   const [activeIssue, setActiveIssue] = useState<Issue | null>(null);
   const isDraggingRef = useRef(false);
+  const refetchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Cleanup timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (refetchTimeoutRef.current) {
+        clearTimeout(refetchTimeoutRef.current);
+      }
+    };
+  }, []);
+
+  // Schedule a debounced refetch to sync with backend
+  const scheduleRefetch = () => {
+    // Clear any existing timeout
+    if (refetchTimeoutRef.current) {
+      clearTimeout(refetchTimeoutRef.current);
+    }
+
+    // Schedule new refetch after delay
+    refetchTimeoutRef.current = setTimeout(() => {
+      queryClient.invalidateQueries({ queryKey: ['issues', filters] });
+      refetchTimeoutRef.current = null;
+    }, REFETCH_DELAY_MS);
+  };
 
   const moveIssueMutation = useMutation({
     mutationFn: ({
@@ -32,9 +57,11 @@ export function useDragAndDrop(
       orderIndex: number;
     }) => moveIssue(id, status, orderIndex),
     onMutate: async ({ id, status, orderIndex }) => {
+      // Cancel any outgoing refetches to avoid overwriting our optimistic update
       await queryClient.cancelQueries({ queryKey: ['issues', filters] });
       const previousIssues = queryClient.getQueryData<Issue[]>(['issues', filters]);
 
+      // Optimistically update the cache
       queryClient.setQueryData<Issue[]>(['issues', filters], (old) => {
         if (!old) return [];
         return old.map((issue) => {
@@ -48,10 +75,13 @@ export function useDragAndDrop(
       return { previousIssues };
     },
     onError: (err, newTodo, context) => {
+      // Revert to previous state on error
       queryClient.setQueryData(['issues', filters], context?.previousIssues);
+      queryClient.invalidateQueries({ queryKey: ['issues', filters] });
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['issues', filters] });
+      // Schedule a debounced refetch instead of immediate invalidation
+      scheduleRefetch();
     },
   });
 
@@ -79,7 +109,10 @@ export function useDragAndDrop(
 
     if (activeId === overId) return;
 
-    const activeIssue = issues.find((i) => i.id === activeId);
+    // Get fresh issues from cache to avoid stale closure
+    const currentIssues = queryClient.getQueryData<Issue[]>(['issues', filters]) || [];
+
+    const activeIssue = currentIssues.find((i) => i.id === activeId);
     if (!activeIssue) return;
 
     const isOverColumn = ISSUE_COLUMNS.some((c) => c.id === overId);
@@ -100,7 +133,7 @@ export function useDragAndDrop(
         });
       }
     } else {
-      const overIssue = issues.find((i) => i.id === overId);
+      const overIssue = currentIssues.find((i) => i.id === overId);
       if (!overIssue) return;
 
       if (activeIssue.status !== overIssue.status) {
@@ -125,7 +158,6 @@ export function useDragAndDrop(
     setActiveIssue(null);
 
     if (!over) {
-      queryClient.invalidateQueries({ queryKey: ['issues', filters] });
       return;
     }
 
@@ -134,9 +166,11 @@ export function useDragAndDrop(
 
     if (activeId === overId) return;
 
-    const originalIssue = issues.find((i) => i.id === activeId);
+    // Get fresh issues from cache to avoid stale closure
+    const currentIssues = queryClient.getQueryData<Issue[]>(['issues', filters]) || [];
+
+    const originalIssue = currentIssues.find((i) => i.id === activeId);
     if (!originalIssue) {
-      queryClient.invalidateQueries({ queryKey: ['issues', filters] });
       return;
     }
 
@@ -146,7 +180,7 @@ export function useDragAndDrop(
     if (isOverColumn) {
       targetStatus = overId as IssueStatus;
     } else {
-      const overIssue = issues.find((i) => i.id === overId);
+      const overIssue = currentIssues.find((i) => i.id === overId);
       if (overIssue) {
         targetStatus = overIssue.status;
       }

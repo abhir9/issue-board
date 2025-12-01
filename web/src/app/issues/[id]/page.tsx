@@ -144,9 +144,6 @@ function IssueDetailsContent({ issue, users, labels, onNavigateBack }: IssueDeta
       toast.success('Issue updated successfully');
       onNavigateBack();
     },
-    onError: () => {
-      toast.error('Failed to update issue');
-    },
   });
 
   const deleteMutation = useMutation({
@@ -155,9 +152,6 @@ function IssueDetailsContent({ issue, users, labels, onNavigateBack }: IssueDeta
       queryClient.invalidateQueries({ queryKey: ['issues'] });
       toast.success('Issue deleted successfully');
       onNavigateBack();
-    },
-    onError: () => {
-      toast.error('Failed to delete issue');
     },
   });
 

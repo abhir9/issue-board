@@ -14,7 +14,9 @@ export default function Providers({ children }: { children: React.ReactNode }) {
             refetchOnWindowFocus: false,
           },
           mutations: {
-            retry: 0,
+            retry: 1, // Retry once on network errors
+            retryDelay: 500, // Wait 500ms before retry
+            networkMode: 'online', // Only run when online
           },
         },
       })

@@ -89,3 +89,27 @@ export async function DELETE(
   const params = await resolveParams(context.params);
   return proxyRequest(req, params);
 }
+
+export async function PUT(
+  req: NextRequest,
+  context: { params: Promise<ProxyParams> | ProxyParams }
+) {
+  const params = await resolveParams(context.params);
+  return proxyRequest(req, params);
+}
+
+export async function HEAD(
+  req: NextRequest,
+  context: { params: Promise<ProxyParams> | ProxyParams }
+) {
+  const params = await resolveParams(context.params);
+  return proxyRequest(req, params);
+}
+
+export async function OPTIONS(
+  req: NextRequest,
+  context: { params: Promise<ProxyParams> | ProxyParams }
+) {
+  const params = await resolveParams(context.params);
+  return proxyRequest(req, params);
+}
