@@ -4,15 +4,15 @@ import { useDroppable } from '@dnd-kit/core';
 import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import { Issue, IssueStatus } from '@/types';
 import { IssueCard } from './issue-card';
+import { memo } from 'react';
 
 interface ColumnProps {
   id: IssueStatus;
   title: string;
   issues: Issue[];
-  highlightedId?: string | null;
 }
 
-export function Column({ id, title, issues, highlightedId }: ColumnProps) {
+function ColumnComponent({ id, title, issues }: ColumnProps) {
   const { setNodeRef } = useDroppable({ id });
 
   return (
@@ -35,13 +35,7 @@ export function Column({ id, title, issues, highlightedId }: ColumnProps) {
                 <span className="text-sm">No issues</span>
               </div>
             ) : (
-              issues.map((issue) => (
-                <IssueCard
-                  key={issue.id}
-                  issue={issue}
-                  isHighlighted={issue.id === highlightedId}
-                />
-              ))
+              issues.map((issue) => <IssueCard key={issue.id} issue={issue} />)
             )}
           </div>
         </SortableContext>
@@ -49,3 +43,6 @@ export function Column({ id, title, issues, highlightedId }: ColumnProps) {
     </div>
   );
 }
+
+// Memoize to prevent unnecessary re-renders
+export const Column = memo(ColumnComponent);

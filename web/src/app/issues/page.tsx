@@ -1,7 +1,18 @@
+'use client';
+
 import { Board } from '@/components/board';
-import { CreateIssueModal } from '@/components/create-issue-modal';
 import { BoardFilters } from '@/components/board-filters';
 import { Suspense } from 'react';
+import dynamic from 'next/dynamic';
+
+// Code splitting: Load CreateIssueModal only when needed
+const CreateIssueModal = dynamic(
+  () => import('@/components/create-issue-modal').then((mod) => mod.CreateIssueModal),
+  {
+    ssr: false,
+    loading: () => null,
+  }
+);
 
 export default function IssuesPage() {
   return (

@@ -81,13 +81,15 @@ export function CreateIssueModal({
     onSuccess: (newIssue) => {
       queryClient.invalidateQueries({ queryKey: ['issues'] });
       setOpen(false);
-      setFormData({
-        title: '',
-        description: '',
-        status: 'Todo',
-        priority: 'Medium',
-        label_ids: [],
-      });
+      setTimeout(() => {
+        setFormData({
+          title: '',
+          description: '',
+          status: 'Todo',
+          priority: 'Medium',
+          label_ids: [],
+        });
+      }, 300);
       toast.success('Issue created successfully');
       // Add highlight param to URL to trigger highlight animation on the board
       router.push(`/issues?highlight=${newIssue.id}`);
@@ -281,7 +283,7 @@ export function CreateIssueModal({
                 </PopoverContent>
               </Popover>
               <div className="flex flex-wrap gap-2 mt-2">
-                {formData.label_ids?.map((labelId) => {
+                {(formData.label_ids || []).map((labelId) => {
                   const label = labels.find((l) => l.id === labelId);
                   if (!label) return null;
                   return (
@@ -302,7 +304,7 @@ export function CreateIssueModal({
                         onClick={() => {
                           setFormData({
                             ...formData,
-                            label_ids: formData.label_ids?.filter((id) => id !== label.id),
+                            label_ids: (formData.label_ids || []).filter((id) => id !== label.id),
                           });
                         }}
                       >

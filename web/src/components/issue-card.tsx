@@ -7,25 +7,21 @@ import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import Link from 'next/link';
-import { useEffect } from 'react';
+import { useHighlightContext } from '@/contexts/HighlightContext';
 
 interface IssueCardProps {
   issue: Issue;
-  isHighlighted?: boolean;
 }
 
-export function IssueCard({ issue, isHighlighted }: IssueCardProps) {
+export function IssueCard({ issue }: IssueCardProps) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: issue.id,
     data: { type: 'Issue', issue },
   });
 
-  // Debug logging
-  useEffect(() => {
-    if (isHighlighted) {
-      console.log('Card highlighted:', issue.id, issue.title);
-    }
-  }, [isHighlighted, issue.id, issue.title]);
+  // Get highlighted state from context
+  const { highlightedId } = useHighlightContext();
+  const isHighlighted = issue.id === highlightedId;
 
   const style = {
     transform: CSS.Transform.toString(transform),
@@ -44,7 +40,16 @@ export function IssueCard({ issue, isHighlighted }: IssueCardProps) {
   };
 
   return (
-    <div ref={setNodeRef} style={style} {...attributes} {...listeners} className="mb-3 touch-none">
+    <div
+      ref={setNodeRef}
+      style={style}
+      {...attributes}
+      {...listeners}
+      className="mb-3 touch-none"
+      role="button"
+      aria-label={`${issue.title}, ${issue.priority} priority, ${issue.status} status. Press to drag and reorder.`}
+      tabIndex={0}
+    >
       <Link href={`/issues/${issue.id}`} scroll={false} className="block">
         <Card
           className={`transition-all duration-300 group relative overflow-hidden ${

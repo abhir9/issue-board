@@ -4,6 +4,7 @@ import './globals.css';
 import Providers from '@/components/providers';
 import { Toaster } from '@/components/ui/sonner';
 import { CommandPalette } from '@/components/command-palette';
+import { ErrorBoundary } from '@/components/error-boundary';
 
 const inter = Inter({ subsets: ['latin'] });
 
@@ -20,11 +21,13 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={inter.className}>
-        <Providers>
-          {children}
-          <Toaster position="top-right" richColors theme="dark" />
-          <CommandPalette />
-        </Providers>
+        <ErrorBoundary>
+          <Providers>
+            {children}
+            <Toaster position="top-right" richColors theme="dark" />
+            <CommandPalette />
+          </Providers>
+        </ErrorBoundary>
       </body>
     </html>
   );

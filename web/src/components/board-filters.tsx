@@ -17,12 +17,12 @@ export function BoardFilters() {
   const router = useRouter();
   const searchParams = useSearchParams();
 
-  const { data: users = [] } = useQuery({
+  const { data: users = [], isLoading: usersLoading } = useQuery({
     queryKey: ['users'],
     queryFn: getUsers,
   });
 
-  const { data: labels = [] } = useQuery({
+  const { data: labels = [], isLoading: labelsLoading } = useQuery({
     queryKey: ['labels'],
     queryFn: getLabels,
   });
@@ -51,15 +51,21 @@ export function BoardFilters() {
     <div className="flex items-center gap-2">
       <Select value={assignee} onValueChange={(v) => updateFilter('assignee', v)}>
         <SelectTrigger className="w-[150px] h-9" aria-label="Filter by assignee">
-          <SelectValue placeholder="Assignee" />
+          <SelectValue placeholder={usersLoading ? 'Loading...' : 'Assignee'} />
         </SelectTrigger>
         <SelectContent>
           <SelectItem value="all">All Assignees</SelectItem>
-          {users.map((user) => (
-            <SelectItem key={user.id} value={user.id}>
-              {user.name}
+          {usersLoading ? (
+            <SelectItem value="loading" disabled>
+              Loading...
             </SelectItem>
-          ))}
+          ) : (
+            users.map((user) => (
+              <SelectItem key={user.id} value={user.id}>
+                {user.name}
+              </SelectItem>
+            ))
+          )}
         </SelectContent>
       </Select>
 
@@ -78,15 +84,21 @@ export function BoardFilters() {
 
       <Select value={label} onValueChange={(v) => updateFilter('labels', v)}>
         <SelectTrigger className="w-[150px] h-9" aria-label="Filter by label">
-          <SelectValue placeholder="Label" />
+          <SelectValue placeholder={labelsLoading ? 'Loading...' : 'Label'} />
         </SelectTrigger>
         <SelectContent>
           <SelectItem value="all">All Labels</SelectItem>
-          {labels.map((l) => (
-            <SelectItem key={l.id} value={l.name}>
-              {l.name}
+          {labelsLoading ? (
+            <SelectItem value="loading" disabled>
+              Loading...
             </SelectItem>
-          ))}
+          ) : (
+            labels.map((l) => (
+              <SelectItem key={l.id} value={l.name}>
+                {l.name}
+              </SelectItem>
+            ))
+          )}
         </SelectContent>
       </Select>
 

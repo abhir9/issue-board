@@ -30,7 +30,7 @@ import { Issue, IssuePriority, IssueStatus } from '@/types';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { ArrowLeft, Save, Trash2, Check, ChevronsUpDown } from 'lucide-react';
 import { useParams, useRouter } from 'next/navigation';
-import { useMemo, useState } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 import { toast } from 'sonner';
 import {
   Command,
@@ -58,7 +58,7 @@ export default function IssueDetailsPage({ onNavigateBack }: IssueDetailsPagePro
   const id = params.id as string;
   const router = useRouter();
   const queryClient = useQueryClient();
-  
+
   const handleNavigateBack = () => {
     if (onNavigateBack) {
       onNavigateBack();
@@ -93,10 +93,22 @@ export default function IssueDetailsPage({ onNavigateBack }: IssueDetailsPagePro
         label_ids: issue.labels?.map((l) => l.id) || [],
       };
     }
-    return {};
+    return { label_ids: [] };
   }, [issue]);
 
   const [formData, setFormData] = useState<IssueFormData>(initialFormData);
+
+  // Sync form data when issue loads
+  useEffect(() => {
+    if (issue) {
+      // Sync local state with server state when data arrives
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setFormData({
+        ...issue,
+        label_ids: issue.labels?.map((l) => l.id) || [],
+      });
+    }
+  }, [issue]);
 
   const updateMutation = useMutation({
     mutationFn: (updates: IssueFormData) =>
@@ -148,12 +160,7 @@ export default function IssueDetailsPage({ onNavigateBack }: IssueDetailsPagePro
       <div className="flex flex-col h-full bg-gray-50">
         <header className="border-b px-6 py-3 flex items-center justify-between bg-white shrink-0">
           <div className="flex items-center gap-4">
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={handleNavigateBack}
-              aria-label="Go back"
-            >
+            <Button variant="ghost" size="icon" onClick={handleNavigateBack} aria-label="Go back">
               <ArrowLeft className="h-4 w-4" />
             </Button>
             <h1 className="font-semibold text-lg">Issue Details</h1>
@@ -260,7 +267,7 @@ export default function IssueDetailsPage({ onNavigateBack }: IssueDetailsPagePro
                     >
                       {formData.label_ids && formData.label_ids.length > 0 ? (
                         <div className="flex flex-wrap gap-1">
-                          {formData.label_ids.map((labelId) => {
+                          {(formData.label_ids || []).map((labelId) => {
                             const label = labels.find((l) => l.id === labelId);
                             return label ? (
                               <Badge key={label.id} variant="secondary" className="mr-1">
@@ -334,7 +341,9 @@ export default function IssueDetailsPage({ onNavigateBack }: IssueDetailsPagePro
                         </span>{' '}
                         created this issue
                       </p>
-                      <p className="text-gray-500 text-xs mt-0.5">2 days ago</p>
+                      <p className="text-gray-500 text-xs mt-0.5">
+                        {new Date(issue.created_at).toLocaleDateString()}
+                      </p>
                     </div>
                   </div>
                   <div className="flex gap-3 text-sm">
@@ -346,7 +355,9 @@ export default function IssueDetailsPage({ onNavigateBack }: IssueDetailsPagePro
                         <span className="font-medium">System</span> changed status to{' '}
                         <span className="font-medium">{issue.status}</span>
                       </p>
-                      <p className="text-gray-500 text-xs mt-0.5">1 day ago</p>
+                      <p className="text-gray-500 text-xs mt-0.5">
+                        {new Date(issue.updated_at).toLocaleDateString()}
+                      </p>
                     </div>
                   </div>
                 </div>
