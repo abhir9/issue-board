@@ -3,20 +3,30 @@ import { CreateIssueRequest, Issue, Label, UpdateIssueRequest, User } from '@/ty
 
 import { toast } from 'sonner';
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080/api';
-
 const api = axios.create({
-  baseURL: API_BASE_URL,
+  baseURL: '/api/proxy',
   headers: {
     'Content-Type': 'application/json',
-    'X-API-Key': process.env.NEXT_PUBLIC_API_KEY || '',
   },
 });
 
 api.interceptors.response.use(
   (response) => response,
   (error) => {
-    const message = error.response?.data || error.message || 'An error occurred';
+    const payload = error.response?.data;
+    let message = error.message || 'An error occurred';
+
+    if (payload) {
+      if (typeof payload === 'string') {
+        message = payload;
+      } else if (typeof payload === 'object') {
+        const maybeMessage =
+          (payload as { message?: string; error?: string }).message ||
+          (payload as { message?: string; error?: string }).error;
+        message = maybeMessage || JSON.stringify(payload);
+      }
+    }
+
     toast.error(message);
     return Promise.reject(error);
   }
@@ -40,6 +50,11 @@ export const getIssues = async (filters?: {
 
 export const createIssue = async (issue: CreateIssueRequest) => {
   const { data } = await api.post<Issue>('/issues', issue);
+  return data;
+};
+
+export const getIssue = async (id: string) => {
+  const { data } = await api.get<Issue>(`/issues/${id}`);
   return data;
 };
 

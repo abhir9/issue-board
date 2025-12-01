@@ -3,16 +3,10 @@ import { useSearchParams, useRouter } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
 import { getIssues } from '@/lib/api';
 import { Issue, IssueStatus } from '@/types';
+import { ISSUE_COLUMNS } from '@/constants/issues';
+import { toast } from 'sonner';
 
 const HIGHLIGHT_DURATION_MS = 2000;
-
-const COLUMNS: { id: IssueStatus; title: string }[] = [
-  { id: 'Backlog', title: 'Backlog' },
-  { id: 'Todo', title: 'Todo' },
-  { id: 'In Progress', title: 'In Progress' },
-  { id: 'Done', title: 'Done' },
-  { id: 'Canceled', title: 'Canceled' },
-];
 
 export function useBoardData() {
   const searchParams = useSearchParams();
@@ -23,23 +17,37 @@ export function useBoardData() {
   // Handle highlight effect from URL params
   const highlightId = searchParams.get('highlight');
 
-  const filters = useMemo(
-    () => ({
-      assignee: searchParams.get('assignee') || undefined,
-      priority: searchParams.get('priority') ? [searchParams.get('priority') as string] : undefined,
-      labels: searchParams.get('labels') ? [searchParams.get('labels') as string] : undefined,
-    }),
-    [searchParams]
-  );
+  const filters = useMemo(() => {
+    const priorityParam = searchParams.get('priority');
+    const labelParam = searchParams.get('labels');
+    const statusParam = searchParams.get('status');
 
-  const { data: issues = [], isLoading } = useQuery({
+    return {
+      assignee: searchParams.get('assignee') || undefined,
+      priority: priorityParam && priorityParam !== 'all' ? [priorityParam] : undefined,
+      labels: labelParam && labelParam !== 'all' ? [labelParam] : undefined,
+      status: statusParam && statusParam !== 'all' ? [statusParam] : undefined,
+    };
+  }, [searchParams]);
+
+  const {
+    data: issues = [],
+    isLoading,
+    error,
+  } = useQuery({
     queryKey: ['issues', filters],
     queryFn: () => getIssues(filters),
   });
 
+  useEffect(() => {
+    if (error) {
+      toast.error('Failed to load issues');
+    }
+  }, [error]);
+
   const columns = useMemo(() => {
     const cols = new Map<IssueStatus, Issue[]>();
-    COLUMNS.forEach((c) => cols.set(c.id, []));
+    ISSUE_COLUMNS.forEach((c) => cols.set(c.id, []));
 
     // Sort by order_index
     const sortedIssues = [...issues].sort((a, b) => a.order_index - b.order_index);
@@ -52,7 +60,7 @@ export function useBoardData() {
   }, [issues]);
 
   const columnArrays = useMemo(() => {
-    return COLUMNS.map((col) => ({
+    return ISSUE_COLUMNS.map((col) => ({
       id: col.id,
       title: col.title,
       issues: columns.get(col.id) || [],
@@ -74,6 +82,7 @@ export function useBoardData() {
     filters,
     columns: columnArrays,
     highlightedId,
+    error,
   };
 }
 

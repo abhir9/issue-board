@@ -58,12 +58,12 @@ export function CreateIssueModal({
   const queryClient = useQueryClient();
   const router = useRouter();
 
-  const { data: users = [] } = useQuery({
+  const { data: users = [], error: usersError } = useQuery({
     queryKey: ['users'],
     queryFn: getUsers,
   });
 
-  const { data: labels = [] } = useQuery({
+  const { data: labels = [], error: labelsError } = useQuery({
     queryKey: ['labels'],
     queryFn: getLabels,
   });
@@ -94,7 +94,22 @@ export function CreateIssueModal({
       // Add highlight param to URL to trigger highlight animation on the board
       router.push(`/issues?highlight=${newIssue.id}`);
     },
+    onError: () => {
+      toast.error('Failed to create issue');
+    },
   });
+
+  useEffect(() => {
+    if (usersError) {
+      toast.error('Failed to load assignees');
+    }
+  }, [usersError]);
+
+  useEffect(() => {
+    if (labelsError) {
+      toast.error('Failed to load labels');
+    }
+  }, [labelsError]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();

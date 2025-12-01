@@ -22,15 +22,12 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
-import { deleteIssue, updateIssue, getUsers, getLabels } from '@/lib/api';
-import axios from 'axios';
-
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080/api';
-import { Issue, IssuePriority, IssueStatus } from '@/types';
+import { deleteIssue, updateIssue, getUsers, getLabels, getIssue } from '@/lib/api';
+import { Issue, IssuePriority, IssueStatus, Label, User } from '@/types';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { ArrowLeft, Save, Trash2, Check, ChevronsUpDown } from 'lucide-react';
 import { useParams, useRouter } from 'next/navigation';
-import { useMemo, useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { toast } from 'sonner';
 import {
   Command,
@@ -57,7 +54,6 @@ export default function IssueDetailsPage({ onNavigateBack }: IssueDetailsPagePro
   const params = useParams();
   const id = params.id as string;
   const router = useRouter();
-  const queryClient = useQueryClient();
 
   const handleNavigateBack = () => {
     if (onNavigateBack) {
@@ -67,52 +63,74 @@ export default function IssueDetailsPage({ onNavigateBack }: IssueDetailsPagePro
     }
   };
 
-  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
-
   // Fetch issue directly or from cache
-  const { data: issue, isLoading } = useQuery({
+  const {
+    data: issue,
+    isLoading,
+    error: issueError,
+  } = useQuery({
     queryKey: ['issue', id],
-    queryFn: async () => {
-      const { data } = await axios.get<Issue>(`${API_BASE_URL}/issues/${id}`, {
-        headers: {
-          'X-API-Key': process.env.NEXT_PUBLIC_API_KEY || '',
-        },
-      });
-      return data;
-    },
+    queryFn: () => getIssue(id),
   });
 
-  const { data: users = [] } = useQuery({ queryKey: ['users'], queryFn: getUsers });
-  const { data: labels = [] } = useQuery({ queryKey: ['labels'], queryFn: getLabels });
+  const { data: users = [], error: usersError } = useQuery({
+    queryKey: ['users'],
+    queryFn: getUsers,
+  });
+  const { data: labels = [], error: labelsError } = useQuery({
+    queryKey: ['labels'],
+    queryFn: getLabels,
+  });
 
-  // Use issue data directly as initial form state - useMemo to avoid recalculation
-  const initialFormData = useMemo(() => {
-    if (issue) {
-      return {
-        ...issue,
-        label_ids: issue.labels?.map((l) => l.id) || [],
-      };
-    }
-    return { label_ids: [] };
-  }, [issue]);
-
-  const [formData, setFormData] = useState<IssueFormData>(initialFormData);
-
-  // Sync form data when issue loads
   useEffect(() => {
-    if (issue) {
-      // Sync local state with server state when data arrives
-      // eslint-disable-next-line react-hooks/set-state-in-effect
-      setFormData({
-        ...issue,
-        label_ids: issue.labels?.map((l) => l.id) || [],
-      });
+    if (issueError) {
+      toast.error('Failed to load issue');
     }
-  }, [issue]);
+  }, [issueError]);
+
+  useEffect(() => {
+    if (usersError) {
+      toast.error('Failed to load assignees');
+    }
+  }, [usersError]);
+
+  useEffect(() => {
+    if (labelsError) {
+      toast.error('Failed to load labels');
+    }
+  }, [labelsError]);
+
+  if (isLoading) return <IssueDetailsSkeleton />;
+  if (!issue) return <div className="p-8">Issue not found</div>;
+  return (
+    <IssueDetailsContent
+      key={issue.id}
+      issue={issue}
+      users={users}
+      labels={labels}
+      onNavigateBack={handleNavigateBack}
+    />
+  );
+}
+
+interface IssueDetailsContentProps {
+  issue: Issue;
+  users: User[];
+  labels: Label[];
+  onNavigateBack: () => void;
+}
+
+function IssueDetailsContent({ issue, users, labels, onNavigateBack }: IssueDetailsContentProps) {
+  const queryClient = useQueryClient();
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [formData, setFormData] = useState<IssueFormData>(() => ({
+    ...issue,
+    label_ids: issue.labels?.map((l) => l.id) || [],
+  }));
 
   const updateMutation = useMutation({
     mutationFn: (updates: IssueFormData) =>
-      updateIssue(id, {
+      updateIssue(issue.id, {
         title: updates.title,
         description: updates.description,
         status: updates.status,
@@ -122,9 +140,9 @@ export default function IssueDetailsPage({ onNavigateBack }: IssueDetailsPagePro
       }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['issues'] });
-      queryClient.invalidateQueries({ queryKey: ['issue', id] });
+      queryClient.invalidateQueries({ queryKey: ['issue', issue.id] });
       toast.success('Issue updated successfully');
-      handleNavigateBack();
+      onNavigateBack();
     },
     onError: () => {
       toast.error('Failed to update issue');
@@ -132,19 +150,16 @@ export default function IssueDetailsPage({ onNavigateBack }: IssueDetailsPagePro
   });
 
   const deleteMutation = useMutation({
-    mutationFn: () => deleteIssue(id),
+    mutationFn: () => deleteIssue(issue.id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['issues'] });
       toast.success('Issue deleted successfully');
-      handleNavigateBack();
+      onNavigateBack();
     },
     onError: () => {
       toast.error('Failed to delete issue');
     },
   });
-
-  if (isLoading) return <IssueDetailsSkeleton />;
-  if (!issue) return <div className="p-8">Issue not found</div>;
 
   const handleSave = () => {
     updateMutation.mutate(formData);
@@ -160,7 +175,7 @@ export default function IssueDetailsPage({ onNavigateBack }: IssueDetailsPagePro
       <div className="flex flex-col h-full bg-gray-50">
         <header className="border-b px-6 py-3 flex items-center justify-between bg-white shrink-0">
           <div className="flex items-center gap-4">
-            <Button variant="ghost" size="icon" onClick={handleNavigateBack} aria-label="Go back">
+            <Button variant="ghost" size="icon" onClick={onNavigateBack} aria-label="Go back">
               <ArrowLeft className="h-4 w-4" />
             </Button>
             <h1 className="font-semibold text-lg">Issue Details</h1>

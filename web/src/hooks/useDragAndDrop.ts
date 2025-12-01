@@ -5,16 +5,9 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import type { DragStartEvent, DragOverEvent, DragEndEvent } from '@dnd-kit/core';
 import { moveIssue } from '@/lib/api';
 import { Issue, IssueStatus } from '@/types';
+import { ISSUE_COLUMNS } from '@/constants/issues';
 
 const DRAG_ACTIVATION_DISTANCE_PX = 5;
-
-const COLUMNS: { id: IssueStatus; title: string }[] = [
-  { id: 'Backlog', title: 'Backlog' },
-  { id: 'Todo', title: 'Todo' },
-  { id: 'In Progress', title: 'In Progress' },
-  { id: 'Done', title: 'Done' },
-  { id: 'Canceled', title: 'Canceled' },
-];
 
 export function useDragAndDrop(
   issues: Issue[],
@@ -89,7 +82,7 @@ export function useDragAndDrop(
     const activeIssue = issues.find((i) => i.id === activeId);
     if (!activeIssue) return;
 
-    const isOverColumn = COLUMNS.some((c) => c.id === overId);
+    const isOverColumn = ISSUE_COLUMNS.some((c) => c.id === overId);
 
     if (isOverColumn) {
       const targetStatus = overId as IssueStatus;
@@ -148,7 +141,7 @@ export function useDragAndDrop(
     }
 
     let targetStatus: IssueStatus = originalIssue.status;
-    const isOverColumn = COLUMNS.some((c) => c.id === overId);
+    const isOverColumn = ISSUE_COLUMNS.some((c) => c.id === overId);
 
     if (isOverColumn) {
       targetStatus = overId as IssueStatus;

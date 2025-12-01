@@ -9,26 +9,51 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { getLabels, getUsers } from '@/lib/api';
+import { ISSUE_STATUSES } from '@/constants/issues';
 import { useQuery } from '@tanstack/react-query';
 import { X } from 'lucide-react';
 import { useRouter, useSearchParams } from 'next/navigation';
+import { useEffect, useTransition } from 'react';
+import { toast } from 'sonner';
 
 export function BoardFilters() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const [, startTransition] = useTransition();
 
-  const { data: users = [], isLoading: usersLoading } = useQuery({
+  const {
+    data: users = [],
+    isLoading: usersLoading,
+    error: usersError,
+  } = useQuery({
     queryKey: ['users'],
     queryFn: getUsers,
   });
 
-  const { data: labels = [], isLoading: labelsLoading } = useQuery({
+  const {
+    data: labels = [],
+    isLoading: labelsLoading,
+    error: labelsError,
+  } = useQuery({
     queryKey: ['labels'],
     queryFn: getLabels,
   });
 
+  useEffect(() => {
+    if (usersError) {
+      toast.error('Failed to load assignees');
+    }
+  }, [usersError]);
+
+  useEffect(() => {
+    if (labelsError) {
+      toast.error('Failed to load labels');
+    }
+  }, [labelsError]);
+
   const assignee = searchParams.get('assignee') || 'all';
   const priority = searchParams.get('priority') || 'all';
+  const status = searchParams.get('status') || 'all';
   const label = searchParams.get('labels') || 'all';
 
   const updateFilter = (key: string, value: string) => {
@@ -38,14 +63,19 @@ export function BoardFilters() {
     } else {
       params.delete(key);
     }
-    router.push(`?${params.toString()}`);
+    startTransition(() => {
+      router.replace(`?${params.toString()}`);
+    });
   };
 
   const clearFilters = () => {
-    router.push('/issues');
+    startTransition(() => {
+      router.replace('/issues');
+    });
   };
 
-  const hasFilters = assignee !== 'all' || priority !== 'all' || label !== 'all';
+  const hasFilters =
+    assignee !== 'all' || priority !== 'all' || status !== 'all' || label !== 'all';
 
   return (
     <div className="flex items-center gap-2">
@@ -79,6 +109,20 @@ export function BoardFilters() {
           <SelectItem value="Medium">Medium</SelectItem>
           <SelectItem value="High">High</SelectItem>
           <SelectItem value="Critical">Critical</SelectItem>
+        </SelectContent>
+      </Select>
+
+      <Select value={status} onValueChange={(v) => updateFilter('status', v)}>
+        <SelectTrigger className="w-[150px] h-9" aria-label="Filter by status">
+          <SelectValue placeholder="Status" />
+        </SelectTrigger>
+        <SelectContent>
+          <SelectItem value="all">All Statuses</SelectItem>
+          {ISSUE_STATUSES.map((s) => (
+            <SelectItem key={s} value={s}>
+              {s}
+            </SelectItem>
+          ))}
         </SelectContent>
       </Select>
 

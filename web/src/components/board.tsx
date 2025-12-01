@@ -9,11 +9,19 @@ import { Column } from './column';
 import { IssueCard } from './issue-card';
 
 export function Board() {
-  const { issues, isLoading, filters, columns, highlightedId } = useBoardData();
+  const { issues, isLoading, filters, columns, highlightedId, error } = useBoardData();
   const { sensors, activeIssue, onDragStart, onDragOver, onDragEnd } = useDragAndDrop(
     issues,
     filters
   );
+
+  if (error) {
+    return (
+      <div className="flex h-full items-center justify-center text-sm text-red-500">
+        Unable to load issues. Please try again.
+      </div>
+    );
+  }
 
   if (isLoading) {
     return (
