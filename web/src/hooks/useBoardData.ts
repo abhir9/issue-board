@@ -41,8 +41,8 @@ export function useBoardData() {
     const cols = new Map<IssueStatus, Issue[]>();
     ISSUE_COLUMNS.forEach((c) => cols.set(c.id, []));
 
-    // Sort by order_index
-    const sortedIssues = [...issues].sort((a, b) => a.order_index - b.order_index);
+    // Sort by order_index - ensure issues is an array
+    const sortedIssues = (issues || []).sort((a, b) => a.order_index - b.order_index);
 
     sortedIssues.forEach((issue) => {
       const col = cols.get(issue.status);

@@ -36,10 +36,10 @@ Create a `.env.local` file in the root directory:
 
 ```bash
 # API Configuration
-NEXT_PUBLIC_API_URL=http://localhost:8080/api
+API_BASE_URL=http://localhost:8080/api
 
 # API Key (WARNING: Currently exposed in client bundle - needs refactoring)
-NEXT_PUBLIC_API_KEY=your-api-key-here
+API_KEY=J3yPAMuS0j5w4AWj6P0bh2l7prZKBSq6
 ```
 
 > **⚠️ Security Note**: The API key is currently exposed in the client-side bundle due to the `NEXT_PUBLIC_` prefix. This should be refactored to use Next.js API routes to keep the key server-side.
