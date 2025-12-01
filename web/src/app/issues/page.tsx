@@ -3,8 +3,6 @@ import { CreateIssueModal } from '@/components/create-issue-modal';
 import { BoardFilters } from '@/components/board-filters';
 import { Suspense } from 'react';
 
-export const dynamic = 'force-dynamic';
-
 export default function IssuesPage() {
   return (
     <div className="h-screen flex flex-col">

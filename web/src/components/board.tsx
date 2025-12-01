@@ -32,12 +32,10 @@ const COLUMNS: { id: IssueStatus; title: string }[] = [
 export function Board() {
   const queryClient = useQueryClient();
   const [activeIssue, setActiveIssue] = useState<Issue | null>(null);
-  const [lastMovedId, setLastMovedId] = useState<string | null>(null);
   const [highlightedId, setHighlightedId] = useState<string | null>(null);
   const searchParams = useSearchParams();
   const router = useRouter();
   const processedHighlightRef = useRef<string | null>(null);
-  const highlightTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   // Handle highlight effect from URL params
   const highlightId = searchParams.get('highlight');
@@ -255,7 +253,6 @@ export function Board() {
       if (activeIndex === -1) return old;
 
       let newItems = [...old];
-      const activeItem = newItems[activeIndex];
 
       // If dropped on another issue (not column), reorder
       if (!isOverColumn) {
@@ -297,18 +294,6 @@ export function Board() {
 
       return newItems;
     });
-
-    // Highlight the card after drop
-    // Clear any existing highlight timeout
-    if (highlightTimeoutRef.current) {
-      clearTimeout(highlightTimeoutRef.current);
-    }
-
-    setLastMovedId(activeId);
-    highlightTimeoutRef.current = setTimeout(() => {
-      setLastMovedId(null);
-      highlightTimeoutRef.current = null;
-    }, 2000);
 
     // Get updated issue from cache
     const updatedIssues = queryClient.getQueryData<Issue[]>(['issues', filters]);
@@ -361,7 +346,6 @@ export function Board() {
               id={col.id}
               title={col.title}
               issues={col.issues}
-              lastMovedId={lastMovedId}
               highlightedId={highlightedId}
             />
           </div>

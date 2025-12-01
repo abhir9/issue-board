@@ -49,11 +49,23 @@ type IssueFormData = Partial<Issue> & {
   label_ids?: string[];
 };
 
-export default function IssueDetailsPage() {
+interface IssueDetailsPageProps {
+  onNavigateBack?: () => void;
+}
+
+export default function IssueDetailsPage({ onNavigateBack }: IssueDetailsPageProps = {}) {
   const params = useParams();
   const id = params.id as string;
   const router = useRouter();
   const queryClient = useQueryClient();
+  
+  const handleNavigateBack = () => {
+    if (onNavigateBack) {
+      onNavigateBack();
+    } else {
+      router.push('/issues');
+    }
+  };
 
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
 
@@ -100,7 +112,7 @@ export default function IssueDetailsPage() {
       queryClient.invalidateQueries({ queryKey: ['issues'] });
       queryClient.invalidateQueries({ queryKey: ['issue', id] });
       toast.success('Issue updated successfully');
-      router.push('/issues');
+      handleNavigateBack();
     },
     onError: () => {
       toast.error('Failed to update issue');
@@ -112,7 +124,7 @@ export default function IssueDetailsPage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['issues'] });
       toast.success('Issue deleted successfully');
-      router.push('/issues');
+      handleNavigateBack();
     },
     onError: () => {
       toast.error('Failed to delete issue');
@@ -136,7 +148,12 @@ export default function IssueDetailsPage() {
       <div className="flex flex-col h-full bg-gray-50">
         <header className="border-b px-6 py-3 flex items-center justify-between bg-white shrink-0">
           <div className="flex items-center gap-4">
-            <Button variant="ghost" size="icon" onClick={() => router.push('/issues')} aria-label="Go back">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={handleNavigateBack}
+              aria-label="Go back"
+            >
               <ArrowLeft className="h-4 w-4" />
             </Button>
             <h1 className="font-semibold text-lg">Issue Details</h1>

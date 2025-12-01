@@ -9,11 +9,10 @@ interface ColumnProps {
   id: IssueStatus;
   title: string;
   issues: Issue[];
-  lastMovedId?: string | null;
   highlightedId?: string | null;
 }
 
-export function Column({ id, title, issues, lastMovedId, highlightedId }: ColumnProps) {
+export function Column({ id, title, issues, highlightedId }: ColumnProps) {
   const { setNodeRef } = useDroppable({ id });
 
   return (
@@ -40,7 +39,7 @@ export function Column({ id, title, issues, lastMovedId, highlightedId }: Column
                 <IssueCard
                   key={issue.id}
                   issue={issue}
-                  isHighlighted={issue.id === lastMovedId || issue.id === highlightedId}
+                  isHighlighted={issue.id === highlightedId}
                 />
               ))
             )}
