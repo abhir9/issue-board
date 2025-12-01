@@ -1,12 +1,12 @@
 package handlers
 
 import (
-	"api/internal/database"
 	"database/sql"
 	"fmt"
 	"strings"
 	"testing"
 
+	"github.com/abhir9/issue-board/api/internal/database"
 	"github.com/go-chi/chi/v5"
 	_ "github.com/mattn/go-sqlite3"
 )
@@ -20,6 +20,12 @@ func setupTestDB(t *testing.T) *database.Repository {
 	db, err := sql.Open("sqlite3", dsn)
 	if err != nil {
 		t.Fatalf("Failed to open in-memory db: %v", err)
+	}
+
+	// Enable foreign key constraints for SQLite
+	_, err = db.Exec("PRAGMA foreign_keys = ON")
+	if err != nil {
+		t.Fatalf("Failed to enable foreign keys: %v", err)
 	}
 
 	// Create tables manually or read migration files.
@@ -80,4 +86,9 @@ func setupRouter(repo *database.Repository) *chi.Mux {
 	r.Get("/users", h.GetUsers)
 	r.Get("/labels", h.GetLabels)
 	return r
+}
+
+// Helper function to create string pointers
+func ptr(s string) *string {
+	return &s
 }

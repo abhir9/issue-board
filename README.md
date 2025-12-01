@@ -59,7 +59,9 @@ go mod download
 
 **Run Migrations & Seed Data:**
 ```bash
-go run cmd/seed/main.go
+go run cmd/seed/main.go 
+or 
+export $(cat .env | xargs) && go run ./cmd/api/main.go
 ```
 This will:
 - Apply database migrations from `/db/migrations/`
@@ -69,7 +71,9 @@ This will:
 
 **Start the Server:**
 ```bash
-go run cmd/api/main.go
+go run cmd/api/main.go 
+or
+export $(cat .env | xargs) && go run ./cmd/api/main.go
 ```
 The API will run on `http://localhost:8080`.
 

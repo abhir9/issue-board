@@ -1,18 +1,27 @@
 package handlers
 
 import (
-	"api/internal/database"
-	"api/internal/models"
 	"encoding/json"
+	"fmt"
+	"log/slog"
 	"net/http"
 	"strconv"
+	"strings"
 	"time"
 
-	"api/internal/utils"
+	"github.com/abhir9/issue-board/api/internal/database"
+	"github.com/abhir9/issue-board/api/internal/models"
+	"github.com/abhir9/issue-board/api/internal/utils"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/google/uuid"
 )
+
+// WriteJSON is a helper function to write JSON responses
+func WriteJSON(w http.ResponseWriter, data interface{}) error {
+	w.Header().Set("Content-Type", "application/json")
+	return json.NewEncoder(w).Encode(data)
+}
 
 type Handler struct {
 	Repo *database.Repository
@@ -37,6 +46,7 @@ func NewHandler(repo *database.Repository) *Handler {
 // @Router /issues [get]
 // @Security ApiKeyAuth
 func (h *Handler) GetIssues(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
 	status := r.URL.Query()["status"]
 	assignee := r.URL.Query().Get("assignee")
 	priority := r.URL.Query()["priority"]
@@ -56,9 +66,10 @@ func (h *Handler) GetIssues(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	issues, err := h.Repo.GetIssues(status, assignee, priority, labels, page, pageSize)
+	issues, err := h.Repo.GetIssues(ctx, status, assignee, priority, labels, page, pageSize)
 	if err != nil {
-		utils.WriteError(w, http.StatusInternalServerError, "Failed to fetch issues", map[string]interface{}{"error": err.Error()})
+		slog.Error("Failed to fetch issues", "error", err)
+		utils.WriteError(w, http.StatusInternalServerError, "Failed to fetch issues", map[string]interface{}{"error": "Internal server error"})
 		return
 	}
 
@@ -78,9 +89,17 @@ func (h *Handler) GetIssues(w http.ResponseWriter, r *http.Request) {
 // @Router /issues [post]
 // @Security ApiKeyAuth
 func (h *Handler) CreateIssue(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
 	var req models.CreateIssueRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		slog.Warn("Failed to decode create issue request", "error", err)
 		utils.WriteError(w, http.StatusBadRequest, "Invalid request body", map[string]interface{}{"error": err.Error()})
+		return
+	}
+
+	// Validate request
+	if err := validateCreateIssueRequest(&req); err != nil {
+		utils.WriteError(w, http.StatusBadRequest, "Validation failed", map[string]interface{}{"errors": err.Error()})
 		return
 	}
 
@@ -88,9 +107,10 @@ func (h *Handler) CreateIssue(w http.ResponseWriter, r *http.Request) {
 	now := time.Now()
 
 	// Get minimum order_index for this status column to place new issue at the top
-	existingIssues, err := h.Repo.GetIssues([]string{req.Status}, "", nil, nil, 1, 0)
+	existingIssues, err := h.Repo.GetIssues(ctx, []string{req.Status}, "", nil, nil, 1, 0)
 	if err != nil {
-		utils.WriteError(w, http.StatusInternalServerError, "Failed to fetch existing issues", map[string]interface{}{"error": err.Error()})
+		slog.Error("Failed to fetch existing issues", "error", err)
+		utils.WriteError(w, http.StatusInternalServerError, "Failed to fetch existing issues", map[string]interface{}{"error": "Internal server error"})
 		return
 	}
 
@@ -118,21 +138,24 @@ func (h *Handler) CreateIssue(w http.ResponseWriter, r *http.Request) {
 		OrderIndex:  orderIndex,
 	}
 
-	if err := h.Repo.CreateIssue(issue); err != nil {
-		utils.WriteError(w, http.StatusInternalServerError, "Failed to create issue", map[string]interface{}{"error": err.Error()})
+	if err := h.Repo.CreateIssue(ctx, issue); err != nil {
+		slog.Error("Failed to create issue", "error", err)
+		utils.WriteError(w, http.StatusInternalServerError, "Failed to create issue", map[string]interface{}{"error": "Internal server error"})
 		return
 	}
 
 	if len(req.LabelIDs) > 0 {
-		if err := h.Repo.UpdateIssueLabels(id, req.LabelIDs); err != nil {
-			utils.WriteError(w, http.StatusInternalServerError, "Failed to update labels", map[string]interface{}{"error": err.Error()})
+		if err := h.Repo.UpdateIssueLabels(ctx, id, req.LabelIDs); err != nil {
+			slog.Error("Failed to update labels", "error", err)
+			utils.WriteError(w, http.StatusInternalServerError, "Failed to update labels", map[string]interface{}{"error": "Internal server error"})
 			return
 		}
 	}
 
-	createdIssue, err := h.Repo.GetIssue(id)
+	createdIssue, err := h.Repo.GetIssue(ctx, id)
 	if err != nil {
-		utils.WriteError(w, http.StatusInternalServerError, "Failed to fetch created issue", map[string]interface{}{"error": err.Error()})
+		slog.Error("Failed to fetch created issue", "error", err)
+		utils.WriteError(w, http.StatusInternalServerError, "Failed to fetch created issue", map[string]interface{}{"error": "Internal server error"})
 		return
 	}
 
@@ -152,10 +175,12 @@ func (h *Handler) CreateIssue(w http.ResponseWriter, r *http.Request) {
 // @Router /issues/{id} [get]
 // @Security ApiKeyAuth
 func (h *Handler) GetIssue(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
 	id := chi.URLParam(r, "id")
-	issue, err := h.Repo.GetIssue(id)
+	issue, err := h.Repo.GetIssue(ctx, id)
 	if err != nil {
-		utils.WriteError(w, http.StatusInternalServerError, "Failed to fetch issue", map[string]interface{}{"error": err.Error()})
+		slog.Error("Failed to fetch issue", "issue_id", id, "error", err)
+		utils.WriteError(w, http.StatusInternalServerError, "Failed to fetch issue", map[string]interface{}{"error": "Internal server error"})
 		return
 	}
 	if issue == nil {
@@ -180,10 +205,18 @@ func (h *Handler) GetIssue(w http.ResponseWriter, r *http.Request) {
 // @Router /issues/{id} [patch]
 // @Security ApiKeyAuth
 func (h *Handler) UpdateIssue(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
 	id := chi.URLParam(r, "id")
 	var req models.UpdateIssueRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		slog.Warn("Failed to decode update issue request", "error", err)
 		utils.WriteError(w, http.StatusBadRequest, "Invalid request body", map[string]interface{}{"error": err.Error()})
+		return
+	}
+
+	// Validate request
+	if err := validateUpdateIssueRequest(&req); err != nil {
+		utils.WriteError(w, http.StatusBadRequest, "Validation failed", map[string]interface{}{"errors": err.Error()})
 		return
 	}
 
@@ -205,21 +238,24 @@ func (h *Handler) UpdateIssue(w http.ResponseWriter, r *http.Request) {
 	}
 	updates["updated_at"] = time.Now()
 
-	if err := h.Repo.UpdateIssue(id, updates); err != nil {
-		utils.WriteError(w, http.StatusInternalServerError, "Failed to update issue", map[string]interface{}{"error": err.Error()})
+	if err := h.Repo.UpdateIssue(ctx, id, updates); err != nil {
+		slog.Error("Failed to update issue", "issue_id", id, "error", err)
+		utils.WriteError(w, http.StatusInternalServerError, "Failed to update issue", map[string]interface{}{"error": "Internal server error"})
 		return
 	}
 
 	if req.LabelIDs != nil {
-		if err := h.Repo.UpdateIssueLabels(id, req.LabelIDs); err != nil {
-			utils.WriteError(w, http.StatusInternalServerError, "Failed to update labels", map[string]interface{}{"error": err.Error()})
+		if err := h.Repo.UpdateIssueLabels(ctx, id, req.LabelIDs); err != nil {
+			slog.Error("Failed to update labels", "issue_id", id, "error", err)
+			utils.WriteError(w, http.StatusInternalServerError, "Failed to update labels", map[string]interface{}{"error": "Internal server error"})
 			return
 		}
 	}
 
-	updatedIssue, err := h.Repo.GetIssue(id)
+	updatedIssue, err := h.Repo.GetIssue(ctx, id)
 	if err != nil {
-		utils.WriteError(w, http.StatusInternalServerError, "Failed to fetch updated issue", map[string]interface{}{"error": err.Error()})
+		slog.Error("Failed to fetch updated issue", "issue_id", id, "error", err)
+		utils.WriteError(w, http.StatusInternalServerError, "Failed to fetch updated issue", map[string]interface{}{"error": "Internal server error"})
 		return
 	}
 
@@ -240,9 +276,11 @@ func (h *Handler) UpdateIssue(w http.ResponseWriter, r *http.Request) {
 // @Router /issues/{id}/move [patch]
 // @Security ApiKeyAuth
 func (h *Handler) MoveIssue(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
 	id := chi.URLParam(r, "id")
 	var req models.UpdateIssueRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		slog.Warn("Failed to decode move issue request", "error", err)
 		utils.WriteError(w, http.StatusBadRequest, "Invalid request body", map[string]interface{}{"error": err.Error()})
 		return
 	}
@@ -258,8 +296,9 @@ func (h *Handler) MoveIssue(w http.ResponseWriter, r *http.Request) {
 		updates["order_index"] = *req.OrderIndex
 	}
 
-	if err := h.Repo.UpdateIssue(id, updates); err != nil {
-		utils.WriteError(w, http.StatusInternalServerError, "Failed to update issue", map[string]interface{}{"error": err.Error()})
+	if err := h.Repo.UpdateIssue(ctx, id, updates); err != nil {
+		slog.Error("Failed to update issue", "issue_id", id, "error", err)
+		utils.WriteError(w, http.StatusInternalServerError, "Failed to update issue", map[string]interface{}{"error": "Internal server error"})
 		return
 	}
 
@@ -276,9 +315,11 @@ func (h *Handler) MoveIssue(w http.ResponseWriter, r *http.Request) {
 // @Router /issues/{id} [delete]
 // @Security ApiKeyAuth
 func (h *Handler) DeleteIssue(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
 	id := chi.URLParam(r, "id")
-	if err := h.Repo.DeleteIssue(id); err != nil {
-		utils.WriteError(w, http.StatusInternalServerError, "Failed to delete issue", map[string]interface{}{"error": err.Error()})
+	if err := h.Repo.DeleteIssue(ctx, id); err != nil {
+		slog.Error("Failed to delete issue", "issue_id", id, "error", err)
+		utils.WriteError(w, http.StatusInternalServerError, "Failed to delete issue", map[string]interface{}{"error": "Internal server error"})
 		return
 	}
 	w.WriteHeader(http.StatusNoContent)
@@ -295,9 +336,11 @@ func (h *Handler) DeleteIssue(w http.ResponseWriter, r *http.Request) {
 // @Router /users [get]
 // @Security ApiKeyAuth
 func (h *Handler) GetUsers(w http.ResponseWriter, r *http.Request) {
-	users, err := h.Repo.GetUsers()
+	ctx := r.Context()
+	users, err := h.Repo.GetUsers(ctx)
 	if err != nil {
-		utils.WriteError(w, http.StatusInternalServerError, "Failed to fetch users", map[string]interface{}{"error": err.Error()})
+		slog.Error("Failed to fetch users", "error", err)
+		utils.WriteError(w, http.StatusInternalServerError, "Failed to fetch users", map[string]interface{}{"error": "Internal server error"})
 		return
 	}
 	utils.WriteJSON(w, http.StatusOK, users)
@@ -314,10 +357,102 @@ func (h *Handler) GetUsers(w http.ResponseWriter, r *http.Request) {
 // @Router /labels [get]
 // @Security ApiKeyAuth
 func (h *Handler) GetLabels(w http.ResponseWriter, r *http.Request) {
-	labels, err := h.Repo.GetLabels()
+	ctx := r.Context()
+	labels, err := h.Repo.GetLabels(ctx)
 	if err != nil {
-		utils.WriteError(w, http.StatusInternalServerError, "Failed to fetch labels", map[string]interface{}{"error": err.Error()})
+		slog.Error("Failed to fetch labels", "error", err)
+		utils.WriteError(w, http.StatusInternalServerError, "Failed to fetch labels", map[string]interface{}{"error": "Internal server error"})
 		return
 	}
 	utils.WriteJSON(w, http.StatusOK, labels)
+}
+
+// validateCreateIssueRequest validates a create issue request
+func validateCreateIssueRequest(req *models.CreateIssueRequest) error {
+	var errors []string
+
+	if req.Title == "" {
+		errors = append(errors, "title is required")
+	} else if len(req.Title) > 200 {
+		errors = append(errors, "title must not exceed 200 characters")
+	}
+
+	if len(req.Description) > 5000 {
+		errors = append(errors, "description must not exceed 5000 characters")
+	}
+
+	validStatus := false
+	for _, s := range models.ValidStatuses {
+		if req.Status == s {
+			validStatus = true
+			break
+		}
+	}
+	if !validStatus {
+		errors = append(errors, fmt.Sprintf("status must be one of: %v", models.ValidStatuses))
+	}
+
+	validPriority := false
+	for _, p := range models.ValidPriorities {
+		if req.Priority == p {
+			validPriority = true
+			break
+		}
+	}
+	if !validPriority {
+		errors = append(errors, fmt.Sprintf("priority must be one of: %v", models.ValidPriorities))
+	}
+
+	if len(errors) > 0 {
+		return fmt.Errorf("%s", strings.Join(errors, "; "))
+	}
+	return nil
+}
+
+// validateUpdateIssueRequest validates an update issue request
+func validateUpdateIssueRequest(req *models.UpdateIssueRequest) error {
+	var errors []string
+
+	if req.Title != nil {
+		if *req.Title == "" {
+			errors = append(errors, "title cannot be empty")
+		} else if len(*req.Title) > 200 {
+			errors = append(errors, "title must not exceed 200 characters")
+		}
+	}
+
+	if req.Description != nil && len(*req.Description) > 5000 {
+		errors = append(errors, "description must not exceed 5000 characters")
+	}
+
+	if req.Status != nil {
+		validStatus := false
+		for _, s := range models.ValidStatuses {
+			if *req.Status == s {
+				validStatus = true
+				break
+			}
+		}
+		if !validStatus {
+			errors = append(errors, fmt.Sprintf("status must be one of: %v", models.ValidStatuses))
+		}
+	}
+
+	if req.Priority != nil {
+		validPriority := false
+		for _, p := range models.ValidPriorities {
+			if *req.Priority == p {
+				validPriority = true
+				break
+			}
+		}
+		if !validPriority {
+			errors = append(errors, fmt.Sprintf("priority must be one of: %v", models.ValidPriorities))
+		}
+	}
+
+	if len(errors) > 0 {
+		return fmt.Errorf("%s", strings.Join(errors, "; "))
+	}
+	return nil
 }

@@ -46,3 +46,9 @@ type UpdateIssueRequest struct {
 	LabelIDs    []string `json:"label_ids"`
 	OrderIndex  *float64 `json:"order_index"`
 }
+
+// Valid status values
+var ValidStatuses = []string{"Backlog", "Todo", "In Progress", "Done", "Canceled"}
+
+// Valid priority values
+var ValidPriorities = []string{"Low", "Medium", "High", "Critical"}

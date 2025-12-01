@@ -33,7 +33,7 @@ COPY --from=builder /app/main .
 COPY --from=builder /app/seed .
 
 # Copy migrations
-COPY --from=builder /app/db/migrations ./db/migrations
+COPY --from=builder /app/migrations ./migrations
 
 # Expose port
 EXPOSE 8080
