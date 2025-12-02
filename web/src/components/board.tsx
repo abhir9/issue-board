@@ -14,6 +14,7 @@ export function Board() {
     filters
   );
 
+  // Only show error for actual errors, not for empty results
   if (error) {
     return (
       <div className="flex h-full items-center justify-center text-sm text-red-500">

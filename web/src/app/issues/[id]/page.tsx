@@ -4,6 +4,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
+import { notFound } from 'next/navigation';
 import {
   Select,
   SelectContent,
@@ -84,7 +85,13 @@ export default function IssueDetailsPage({ onNavigateBack }: IssueDetailsPagePro
 
   useEffect(() => {
     if (issueError) {
-      toast.error('Failed to load issue');
+      // Check if it's a 404 error
+      const is404 = (issueError as any)?.response?.status === 404;
+      if (is404) {
+        notFound(); // Trigger the not-found.tsx page
+      } else {
+        toast.error('Failed to load issue');
+      }
     }
   }, [issueError]);
 

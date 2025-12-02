@@ -19,8 +19,8 @@ export type Issue = {
   description: string;
   status: IssueStatus;
   priority: IssuePriority;
-  assignee_id?: string;
-  assignee?: User;
+  assignee_id?: string | null;
+  assignee?: User | null;
   labels?: Label[];
   created_at: string;
   updated_at: string;
@@ -32,7 +32,7 @@ export type CreateIssueRequest = {
   description: string;
   status: IssueStatus;
   priority: IssuePriority;
-  assignee_id?: string;
+  assignee_id?: string | null;
   label_ids: string[];
 };
 

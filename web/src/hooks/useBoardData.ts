@@ -29,11 +29,19 @@ export function useBoardData() {
   } = useQuery({
     queryKey: ['issues', filters],
     queryFn: () => getIssues(filters),
+    retry: 1, // Only retry once to avoid excessive retries
+    // Don't treat empty results as errors
+    retryOnMount: false,
   });
 
   useEffect(() => {
     if (error) {
-      toast.error('Failed to load issues');
+      // Log error details in development
+      if (process.env.NODE_ENV === 'development') {
+        console.error('Board data error:', error);
+      }
+      // Only show error toast for actual API errors, not for empty results
+      toast.error('Failed to load issues. Please try again.');
     }
   }, [error]);
 

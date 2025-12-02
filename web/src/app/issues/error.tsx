@@ -10,7 +10,11 @@ interface IssuesErrorProps {
 
 export default function IssuesError({ error, reset }: IssuesErrorProps) {
   useEffect(() => {
-    console.error(error);
+    // Log error in development only
+    if (process.env.NODE_ENV === 'development') {
+      console.error(error);
+    }
+    // TODO: Add production error logging service (e.g., Sentry)
   }, [error]);
 
   return (
