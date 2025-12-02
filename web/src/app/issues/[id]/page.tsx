@@ -86,7 +86,7 @@ export default function IssueDetailsPage({ onNavigateBack }: IssueDetailsPagePro
   useEffect(() => {
     if (issueError) {
       // Check if it's a 404 error
-      const is404 = (issueError as any)?.response?.status === 404;
+      const is404 = (issueError as { response?: { status?: number } })?.response?.status === 404;
       if (is404) {
         notFound(); // Trigger the not-found.tsx page
       } else {

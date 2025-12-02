@@ -59,10 +59,10 @@ export const getIssues = async (filters?: {
   filters?.labels?.forEach((l) => params.append('labels', l));
 
   const { data } = await api.get<Issue[]>('/issues', { params });
-  
+
   // Handle null or undefined as empty array
   const normalizedData = data ?? [];
-  
+
   // Validate API response
   const validated = issuesArraySchema.safeParse(normalizedData);
   if (!validated.success) {

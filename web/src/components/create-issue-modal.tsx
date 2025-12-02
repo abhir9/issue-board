@@ -162,9 +162,9 @@ export function CreateIssueModal({
             <Label htmlFor="title" className="text-sm font-medium">
               Title <span className="text-red-500">*</span>
             </Label>
-            <Input 
-              id="title" 
-              {...register('title')} 
+            <Input
+              id="title"
+              {...register('title')}
               placeholder="Enter issue title..."
               className="h-10"
             />
@@ -176,9 +176,9 @@ export function CreateIssueModal({
             <Label htmlFor="description" className="text-sm font-medium">
               Description
             </Label>
-            <Textarea 
-              id="description" 
-              {...register('description')} 
+            <Textarea
+              id="description"
+              {...register('description')}
               placeholder="Add a detailed description..."
               className="min-h-[100px] resize-none"
             />
@@ -211,7 +211,9 @@ export function CreateIssueModal({
                   </Select>
                 )}
               />
-              {errors.status && <p className="text-xs text-red-500 mt-1">{errors.status.message}</p>}
+              {errors.status && (
+                <p className="text-xs text-red-500 mt-1">{errors.status.message}</p>
+              )}
             </div>
             <div className="space-y-2">
               <Label htmlFor="priority" className="text-sm font-medium">
@@ -254,7 +256,9 @@ export function CreateIssueModal({
                   </Select>
                 )}
               />
-              {errors.priority && <p className="text-xs text-red-500 mt-1">{errors.priority.message}</p>}
+              {errors.priority && (
+                <p className="text-xs text-red-500 mt-1">{errors.priority.message}</p>
+              )}
             </div>
           </div>
 
@@ -328,93 +332,93 @@ export function CreateIssueModal({
                     </PopoverTrigger>
                     <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0">
                       <Command>
-                          <CommandInput placeholder="Search label..." />
-                          <CommandList>
-                            <CommandEmpty>No label found.</CommandEmpty>
-                            <CommandGroup>
-                              {labels.map((label) => (
-                                <CommandItem
-                                  value={label.name}
-                                  key={label.id}
-                                  onSelect={() => {
-                                    const currentLabels = field.value || [];
-                                    const isSelected = currentLabels.includes(label.id);
-                                    field.onChange(
-                                      isSelected
-                                        ? currentLabels.filter((id: string) => id !== label.id)
-                                        : [...currentLabels, label.id]
-                                    );
-                                  }}
-                                >
-                                  <Check
-                                    className={cn(
-                                      'mr-2 h-4 w-4',
-                                      field.value?.includes(label.id) ? 'opacity-100' : 'opacity-0'
-                                    )}
-                                  />
-                                  <div className="flex items-center gap-2 flex-1">
-                                    <div
-                                      className="h-3 w-3 rounded-full shrink-0 ring-1 ring-offset-1 ring-black/10"
-                                      style={{ backgroundColor: label.color }}
-                                    />
-                                    <span className="truncate">{label.name}</span>
-                                  </div>
-                                </CommandItem>
-                              ))}
-                            </CommandGroup>
-                          </CommandList>
-                        </Command>
-                      </PopoverContent>
-                    </Popover>
-                    
-                    {/* Selected Labels Display */}
-                    {field.value && field.value.length > 0 && (
-                      <div className="flex flex-wrap gap-1.5 pt-2">
-                        {(field.value || []).map((labelId: string) => {
-                          const label = labels.find((l) => l.id === labelId);
-                          if (!label) return null;
-                          return (
-                            <Badge
-                              key={label.id}
-                              variant="outline"
-                              className="gap-1.5 px-2 py-1 text-xs font-medium border"
-                              style={{
-                                backgroundColor: `${label.color}15`,
-                                color: label.color,
-                                borderColor: `${label.color}50`,
-                              }}
-                            >
-                              <div
-                                className="h-2 w-2 rounded-full"
-                                style={{ backgroundColor: label.color }}
-                              />
-                              {label.name}
-                              <button
-                                type="button"
-                                className="ml-0.5 hover:bg-black/10 rounded-full p-0.5 transition-colors"
-                                onClick={() => {
+                        <CommandInput placeholder="Search label..." />
+                        <CommandList>
+                          <CommandEmpty>No label found.</CommandEmpty>
+                          <CommandGroup>
+                            {labels.map((label) => (
+                              <CommandItem
+                                value={label.name}
+                                key={label.id}
+                                onSelect={() => {
+                                  const currentLabels = field.value || [];
+                                  const isSelected = currentLabels.includes(label.id);
                                   field.onChange(
-                                    (field.value || []).filter((id: string) => id !== label.id)
+                                    isSelected
+                                      ? currentLabels.filter((id: string) => id !== label.id)
+                                      : [...currentLabels, label.id]
                                   );
                                 }}
                               >
-                                <Plus className="h-2.5 w-2.5 rotate-45" />
-                                <span className="sr-only">Remove</span>
-                              </button>
-                            </Badge>
-                          );
-                        })}
-                      </div>
-                    )}
-                  </>
-                )}
-              />
+                                <Check
+                                  className={cn(
+                                    'mr-2 h-4 w-4',
+                                    field.value?.includes(label.id) ? 'opacity-100' : 'opacity-0'
+                                  )}
+                                />
+                                <div className="flex items-center gap-2 flex-1">
+                                  <div
+                                    className="h-3 w-3 rounded-full shrink-0 ring-1 ring-offset-1 ring-black/10"
+                                    style={{ backgroundColor: label.color }}
+                                  />
+                                  <span className="truncate">{label.name}</span>
+                                </div>
+                              </CommandItem>
+                            ))}
+                          </CommandGroup>
+                        </CommandList>
+                      </Command>
+                    </PopoverContent>
+                  </Popover>
+
+                  {/* Selected Labels Display */}
+                  {field.value && field.value.length > 0 && (
+                    <div className="flex flex-wrap gap-1.5 pt-2">
+                      {(field.value || []).map((labelId: string) => {
+                        const label = labels.find((l) => l.id === labelId);
+                        if (!label) return null;
+                        return (
+                          <Badge
+                            key={label.id}
+                            variant="outline"
+                            className="gap-1.5 px-2 py-1 text-xs font-medium border"
+                            style={{
+                              backgroundColor: `${label.color}15`,
+                              color: label.color,
+                              borderColor: `${label.color}50`,
+                            }}
+                          >
+                            <div
+                              className="h-2 w-2 rounded-full"
+                              style={{ backgroundColor: label.color }}
+                            />
+                            {label.name}
+                            <button
+                              type="button"
+                              className="ml-0.5 hover:bg-black/10 rounded-full p-0.5 transition-colors"
+                              onClick={() => {
+                                field.onChange(
+                                  (field.value || []).filter((id: string) => id !== label.id)
+                                );
+                              }}
+                            >
+                              <Plus className="h-2.5 w-2.5 rotate-45" />
+                              <span className="sr-only">Remove</span>
+                            </button>
+                          </Badge>
+                        );
+                      })}
+                    </div>
+                  )}
+                </>
+              )}
+            />
           </div>
 
           {/* Submit Button */}
           <DialogFooter className="pt-4 border-t">
-            <Button 
-              type="submit" 
+            <Button
+              type="submit"
               disabled={isSubmitting || createMutation.isPending}
               className="w-full sm:w-auto min-w-[120px] h-10"
             >
